@@ -426,53 +426,34 @@
     </div>
   </div>
 
-  <div class="sig-row">
-    <div class="sig-block">
-      <div class="sig-label">Address bits — click to jump to a row-pair</div>
-      <div class="bits" id="bits">
-        <div class="bit" data-bit="0"><span>A</span><small>GPIO45</small></div>
-        <div class="bit" data-bit="1"><span>B</span><small>GPIO36</small></div>
-        <div class="bit" data-bit="2"><span>C</span><small>GPIO48</small></div>
-        <div class="bit" data-bit="3"><span>D</span><small>GPIO35</small></div>
-      </div>
-      <div class="addr-out" id="addrOut"></div>
+  <!-- Address bits (compact strip, still clickable) -->
+  <div class="sig-block" style="margin-top:16px;">
+    <div class="sig-label">Address bits — click any bit to jump to that row-pair</div>
+    <div class="bits" id="bits">
+      <div class="bit" data-bit="0"><span>A</span><small>GPIO45</small></div>
+      <div class="bit" data-bit="1"><span>B</span><small>GPIO36</small></div>
+      <div class="bit" data-bit="2"><span>C</span><small>GPIO48</small></div>
+      <div class="bit" data-bit="3"><span>D</span><small>GPIO35</small></div>
     </div>
-    <div class="sig-block">
-      <div class="sig-label">Control lines</div>
-      <div class="dots">
-        <div class="dot" id="dClk"><span>CLK</span><small>GPIO2</small></div>
-        <div class="dot" id="dLat"><span>LAT</span><small>GPIO47</small></div>
-        <div class="dot" id="dOe"><span>OE</span><small>GPIO14</small></div>
-      </div>
-    </div>
-    <div class="sig-block">
-      <div class="sig-label">RGB pin values — current pixel on CLK</div>
-      <div class="rgb-pins">
-        <div class="rgb-pins-row">
-          <span class="rgb-pins-label">Top ▸</span>
-          <div class="pin-cell" id="pR1"><span id="vR1">–</span><small>R1</small></div>
-          <div class="pin-cell" id="pG1"><span id="vG1">–</span><small>G1</small></div>
-          <div class="pin-cell" id="pB1"><span id="vB1">–</span><small>B1</small></div>
-        </div>
-        <div class="rgb-pins-row">
-          <span class="rgb-pins-label">Bot ▸</span>
-          <div class="pin-cell" id="pR2"><span id="vR2">–</span><small>R2</small></div>
-          <div class="pin-cell" id="pG2"><span id="vG2">–</span><small>G2</small></div>
-          <div class="pin-cell" id="pB2"><span id="vB2">–</span><small>B2</small></div>
-        </div>
-      </div>
-    </div>
+    <div class="addr-out" id="addrOut"></div>
+  </div>
+
+  <!-- Digital waveform -->
+  <div class="sim-panel" style="margin-top:12px; padding:12px 14px;">
+    <div class="title">Signal waveform <span style="font-weight:400;color:var(--text-mute);font-size:11px;">&mdash; last 80 steps &mdash; CLK &middot; A B C D &middot; LAT &middot; OE &middot; R1 G1 B1 &middot; R2 G2 B2</span></div>
+    <canvas id="wc" width="800" height="286" style="width:100%;height:auto;display:block;border-radius:6px;margin-top:8px;"></canvas>
   </div>
 
   <div class="cap" id="cap"></div>
 
   <div class="ctrls">
+    <button class="btn" id="stepBack">&#9664; Step</button>
     <button class="btn" id="play">Pause</button>
-    <button class="btn" id="step">Step ▸</button>
+    <button class="btn" id="step">Step &#9654;</button>
     <button class="btn" id="reset">Reset</button>
     <label class="slabel">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
   </div>
-  <div class="hint">Tip: drag speed to the far left and press Step a few times to watch a single row-pair load column by column, then latch.</div>
+  <div class="hint">Drag speed far left then use <strong>&#9664; Step</strong> / <strong>Step &#9654;</strong> one clock at a time — watch the waveform build left-to-right and LAT/OE fire at the row boundary.</div>
 </div>
 
 <!-- ============ MATERIALS ============ -->
@@ -640,87 +621,102 @@ void loop() {
 (function(){
   var COLS=64, ROWS=32, PAIRS=16, CELL=6, HOLD=6;
 
-  // Each letter is a 4-wide x 8-tall glyph; the 16x8 grid below is built
-  // programmatically (margin + T + gap + P + gap + S + margin = 16 cols)
-  // and each cell is scaled x4 -> 64x32, one letter per RGB channel.
+  // ── TPS image data ────────────────────────────────────────────────────────
   var GLYPH = {
-    T: ["####",".##.",".##.",".##.",".##.",".##.",".##.",".##."],
-    P: ["####","#..#","#..#","####","#...","#...","#...","#..."],
-    S: ["####","#...","#...","####","...#","...#","...#","####"]
+    T: ['####','.##.','.##.','.##.','.##.','.##.','.##.','.##.'],
+    P: ['####','#..#','#..#','####','#...','#...','#...','#...'],
+    S: ['####','#...','#...','####','...#','...#','...#','####']
   };
   var LETTER_COLOR = { T:'#ff3b30', P:'#2ecc71', S:'#3b82f6' };
   var ART = [];
-  for (var r = 0; r < 8; r++) {
+  for (var r=0; r<8; r++)
     ART.push('.' + GLYPH.T[r] + '.' + GLYPH.P[r] + '.' + GLYPH.S[r] + '.');
-  }
   function letterAt(cc){
-    if (cc >= 1 && cc <= 4) return 'T';
-    if (cc >= 6 && cc <= 9) return 'P';
-    if (cc >= 11 && cc <= 14) return 'S';
+    if(cc>=1&&cc<=4) return 'T';
+    if(cc>=6&&cc<=9) return 'P';
+    if(cc>=11&&cc<=14) return 'S';
     return null;
   }
   function color(row,col){
     var cr=Math.floor(row/4), cc=Math.floor(col/4);
-    if (ART[cr][cc] !== '#') return '#000000';
-    var letter = letterAt(cc);
-    return letter ? LETTER_COLOR[letter] : '#000000';
+    if(cr>=8||ART[cr][cc]!=='#') return '#000000';
+    var l=letterAt(cc); return l?LETTER_COLOR[l]:'#000000';
   }
-  function isOn(row,col){ return color(row,col)!=='#000000'; }
 
-  var p1=document.getElementById('p1'),c1=p1.getContext('2d');
-  var p2=document.getElementById('p2'),c2=p2.getContext('2d');
-  var sr=document.getElementById('sr'),cs=sr.getContext('2d');
+  // ── Canvases & DOM refs ───────────────────────────────────────────────────
+  var p1=document.getElementById('p1'), c1=p1.getContext('2d');
+  var p2=document.getElementById('p2'), c2=p2.getContext('2d');
+  var sr=document.getElementById('sr'), cs=sr.getContext('2d');
+  var wc=document.getElementById('wc'), cw=wc.getContext('2d');
   var addrOut=document.getElementById('addrOut'), cap=document.getElementById('cap');
-  var dClk=document.getElementById('dClk'),dLat=document.getElementById('dLat'),dOe=document.getElementById('dOe');
-  var pR1=document.getElementById('pR1'),pG1=document.getElementById('pG1'),pB1=document.getElementById('pB1');
-  var pR2=document.getElementById('pR2'),pG2=document.getElementById('pG2'),pB2=document.getElementById('pB2');
-  var vR1=document.getElementById('vR1'),vG1=document.getElementById('vG1'),vB1=document.getElementById('vB1');
-  var vR2=document.getElementById('vR2'),vG2=document.getElementById('vG2'),vB2=document.getElementById('vB2');
-
-  // Helper: parse a CSS colour string into {r,g,b} (handles #rrggbb)
-  function parseRGB(hex){
-    if(hex==='#000000') return {r:0,g:0,b:0};
-    var n=parseInt(hex.slice(1),16);
-    return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
-  }
-
-  function updatePinCells(){
-    var cells = [
-      {p:pR1,v:vR1,ch:'r',row:addr,     src:'r'},
-      {p:pG1,v:vG1,ch:'g',row:addr,     src:'g'},
-      {p:pB1,v:vB1,ch:'b',row:addr,     src:'b'},
-      {p:pR2,v:vR2,ch:'r',row:addr+16,  src:'r'},
-      {p:pG2,v:vG2,ch:'g',row:addr+16,  src:'g'},
-      {p:pB2,v:vB2,ch:'b',row:addr+16,  src:'b'}
-    ];
-    cells.forEach(function(c){
-      var active = phase==='shift' && col < COLS;
-      c.p.className = 'pin-cell';
-      if(!active){ c.v.textContent='–'; c.p.classList.add('idle'); return; }
-      var rgb = parseRGB(color(c.row, col));
-      var on = (c.src==='r'&&rgb.r>0)||(c.src==='g'&&rgb.g>0)||(c.src==='b'&&rgb.b>0);
-      c.v.textContent = on ? '1' : '0';
-      c.p.classList.add(on ? 'on-'+c.ch : 'ch-'+c.ch);
-    });
-  }
   var bitEls=[].slice.call(document.querySelectorAll('.bit'));
-  var playBtn=document.getElementById('play'),stepBtn=document.getElementById('step'),
-      resetBtn=document.getElementById('reset'),speed=document.getElementById('speed');
+  var playBtn=document.getElementById('play');
+  var stepBtn=document.getElementById('step');
+  var stepBackBtn=document.getElementById('stepBack');
+  var resetBtn=document.getElementById('reset');
+  var speedEl=document.getElementById('speed');
 
-  function cell(ctx,r,c,col){ ctx.fillStyle=col; ctx.fillRect(c*CELL,r*CELL,CELL-1,CELL-1); }
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function parseRGB(hex){
+    if(!hex||hex==='#000000') return {r:0,g:0,b:0};
+    var n=parseInt(hex.slice(1),16);
+    return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+  }
 
+  // ── Waveform signal definitions ───────────────────────────────────────────
+  var SIGS = [
+    {key:'clk', label:'CLK', color:'#4c9aff', fill:true},
+    {key:'a',   label:'A',   color:'#48c774', fill:false},
+    {key:'b',   label:'B',   color:'#48c774', fill:false},
+    {key:'c',   label:'C',   color:'#48c774', fill:false},
+    {key:'d',   label:'D',   color:'#48c774', fill:false},
+    {key:'lat', label:'LAT', color:'#ff5c5c', fill:true},
+    {key:'oe',  label:'OE',  color:'#ffb638', fill:true},
+    {key:'r1',  label:'R1',  color:'#ff6060', fill:true},
+    {key:'g1',  label:'G1',  color:'#2ecc71', fill:true},
+    {key:'b1',  label:'B1',  color:'#60a8ff', fill:true},
+    {key:'r2',  label:'R2',  color:'#ff6060', fill:true},
+    {key:'g2',  label:'G2',  color:'#2ecc71', fill:true},
+    {key:'b2',  label:'B2',  color:'#60a8ff', fill:true}
+  ];
+  var MAX_VIS=80, MAX_BUF=400;
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  var addr=0, col=0, phase='shift', hold=0;
+  var playing=true, spd=14, acc=0, last=null;
+  var waveBuffer=[];    // signal snapshot per tick
+  var stateHistory=[];  // for step-back
+
+  // ── Signal snapshot ───────────────────────────────────────────────────────
+  function snapshot(){
+    var shifting = (phase==='shift' && col<COLS);
+    var top = shifting ? parseRGB(color(addr,   col)) : {r:0,g:0,b:0};
+    var bot = shifting ? parseRGB(color(addr+16,col)) : {r:0,g:0,b:0};
+    return {
+      clk: phase==='shift' ? 1:0,
+      a:(addr>>0)&1, b:(addr>>1)&1, c:(addr>>2)&1, d:(addr>>3)&1,
+      lat:(phase==='latch'&&hold===0)?1:0,
+      oe: phase==='latch'?1:0,
+      r1:shifting&&top.r>0?1:0, g1:shifting&&top.g>0?1:0, b1:shifting&&top.b>0?1:0,
+      r2:shifting&&bot.r>0?1:0, g2:shifting&&bot.g>0?1:0, b2:shifting&&bot.b>0?1:0
+    };
+  }
+  function record(){ waveBuffer.push(snapshot()); if(waveBuffer.length>MAX_BUF) waveBuffer.shift(); }
+
+  // ── Draw pixel canvases ───────────────────────────────────────────────────
+  function px(ctx,r,c,clr){ ctx.fillStyle=clr; ctx.fillRect(c*CELL,r*CELL,CELL-1,CELL-1); }
   function drawP1(){
     c1.fillStyle='#000'; c1.fillRect(0,0,p1.width,p1.height);
-    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++) cell(c1,r,c,color(r,c));
+    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++) px(c1,r,c,color(r,c));
     c1.strokeStyle='#4c9aff'; c1.lineWidth=1.5;
     c1.strokeRect(0,addr*CELL,p1.width,CELL);
     c1.strokeRect(0,(addr+16)*CELL,p1.width,CELL);
   }
   function drawP2(){
     c2.fillStyle='#000'; c2.fillRect(0,0,p2.width,p2.height);
-    var upTo = phase==='shift'? col : COLS;
-    for(var c=0;c<upTo;c++){ cell(c2,addr,c,color(addr,c)); cell(c2,addr+16,c,color(addr+16,c)); }
-    if(phase==='shift' && col<COLS){
+    var upTo=phase==='shift'?col:COLS;
+    for(var c=0;c<upTo;c++){ px(c2,addr,c,color(addr,c)); px(c2,addr+16,c,color(addr+16,c)); }
+    if(phase==='shift'&&col<COLS){
       c2.strokeStyle='#fff'; c2.lineWidth=1;
       c2.strokeRect(col*CELL,addr*CELL,CELL,CELL);
       c2.strokeRect(col*CELL,(addr+16)*CELL,CELL,CELL);
@@ -731,56 +727,159 @@ void loop() {
   }
   function drawSR(){
     cs.fillStyle='#000'; cs.fillRect(0,0,sr.width,sr.height);
-    var filled = phase==='shift'? col : COLS;
+    var filled=phase==='shift'?col:COLS;
     for(var c=0;c<COLS;c++){
-      cs.fillStyle = c<filled? color(addr,c) : 'rgba(255,255,255,0.10)';
+      cs.fillStyle=c<filled?color(addr,c):'rgba(255,255,255,0.10)';
       cs.fillRect(c*CELL,0,CELL-1,14);
-      cs.fillStyle = c<filled? color(addr+16,c) : 'rgba(255,255,255,0.10)';
+      cs.fillStyle=c<filled?color(addr+16,c):'rgba(255,255,255,0.10)';
       cs.fillRect(c*CELL,18,CELL-1,14);
     }
   }
 
-  var addr=0, col=0, phase='shift', hold=0, playing=true, spd=14, acc=0, last=null;
+  // ── Draw waveform ─────────────────────────────────────────────────────────
+  var LW=38, ROW_H=22, PAD=3;
+  function drawWaveform(){
+    var W=wc.width, H=wc.height;
+    var SW=W-LW;                         // signal area width
+    var vis=waveBuffer.slice(-MAX_VIS);
+    var N=vis.length;
+    var sw=N>0?SW/MAX_VIS:SW/MAX_VIS;    // step width (fixed scale)
 
-  function sigs(){
-    dClk.classList.toggle('clk', phase==='shift');
-    dLat.classList.toggle('lat', phase==='latch' && hold===0);
-    dOe.classList.toggle('oe', phase==='latch');
-    for(var i=0;i<4;i++) bitEls[i].classList.toggle('active', !!((addr>>i)&1));
-    addrOut.textContent='ABCD = '+addr.toString(2).padStart(4,'0')+'b ('+addr+')  →  rows '+addr+' & '+(addr+16);
-    if(phase==='shift') cap.textContent='Shifting column '+col+' / 64 into row-pair '+addr+'. Each CLK pulse loads one column of RGB data.';
-    else if(hold===0) cap.textContent='LATCH! Row-pair '+addr+' (rows '+addr+' & '+(addr+16)+') is now displayed. OE enables the LEDs.';
-    else cap.textContent='Holding row-pair '+addr+' lit… next: row-pair '+((addr+1)%PAIRS)+'.';
-    updatePinCells();
+    // Background
+    cw.fillStyle='#0a0d12';
+    cw.fillRect(0,0,W,H);
+
+    // Row separators + labels
+    SIGS.forEach(function(sig,si){
+      var y0=si*ROW_H;
+      // row bg alternating
+      if(si%2===0){ cw.fillStyle='rgba(255,255,255,0.02)'; cw.fillRect(LW,y0,SW,ROW_H); }
+      // label
+      cw.fillStyle=sig.color;
+      cw.font='bold 9px monospace';
+      cw.textAlign='right';
+      cw.textBaseline='middle';
+      cw.fillText(sig.label, LW-4, y0+ROW_H/2);
+    });
+
+    // Vertical separator
+    cw.strokeStyle='rgba(255,255,255,0.18)';
+    cw.lineWidth=1;
+    cw.beginPath(); cw.moveTo(LW,0); cw.lineTo(LW,H); cw.stroke();
+
+    if(N<1) return;
+
+    // Draw each signal
+    SIGS.forEach(function(sig,si){
+      var y0=si*ROW_H;
+      var yHi=y0+PAD, yLo=y0+ROW_H-PAD;
+
+      // Filled HIGH areas
+      if(sig.fill){
+        cw.save(); cw.globalAlpha=0.15; cw.fillStyle=sig.color;
+        var inFill=false, fx=0;
+        for(var i=0;i<N;i++){
+          var x=LW+i*sw, v=vis[i][sig.key];
+          if(v&&!inFill){ fx=x; inFill=true; }
+          if(!v&&inFill){ cw.fillRect(fx,yHi,x-fx,yLo-yHi); inFill=false; }
+        }
+        if(inFill) cw.fillRect(fx,yHi,LW+N*sw-fx,yLo-yHi);
+        cw.restore();
+      }
+
+      // Waveform line
+      cw.strokeStyle=sig.color;
+      cw.lineWidth=1.5;
+      cw.beginPath();
+      var prev=null;
+      for(var i=0;i<N;i++){
+        var x=LW+i*sw;
+        var v=vis[i][sig.key];
+        var y=v?yHi:yLo;
+        if(prev===null){
+          cw.moveTo(x,y);
+        } else if(prev!==v){
+          cw.lineTo(x, prev?yHi:yLo);
+          cw.lineTo(x, y);
+        }
+        cw.lineTo(x+sw, y);
+        prev=v;
+      }
+      cw.stroke();
+    });
+
+    // Playhead at the rightmost sample
+    var px_x=LW+N*sw;
+    cw.save(); cw.globalAlpha=0.35;
+    cw.strokeStyle='#ffffff'; cw.lineWidth=1;
+    cw.setLineDash([3,4]);
+    cw.beginPath(); cw.moveTo(px_x,0); cw.lineTo(px_x,H); cw.stroke();
+    cw.setLineDash([]); cw.restore();
   }
-  function render(){ drawP1(); drawP2(); drawSR(); }
 
-  function tick(){
-    if(phase==='shift'){ col++; if(col>=COLS){ phase='latch'; hold=0; } }
-    else { hold++; if(hold>=HOLD){ phase='shift'; col=0; addr=(addr+1)%PAIRS; } }
+  // ── State history (step-back) ─────────────────────────────────────────────
+  function pushHistory(){
+    stateHistory.push({addr:addr,col:col,phase:phase,hold:hold,bufLen:waveBuffer.length});
+    if(stateHistory.length>300) stateHistory.shift();
+  }
+  function stepBack(){
+    if(!stateHistory.length) return;
+    var s=stateHistory.pop();
+    addr=s.addr; col=s.col; phase=s.phase; hold=s.hold;
+    waveBuffer=waveBuffer.slice(0,s.bufLen);
     sigs(); render();
   }
 
+  // ── sigs / render ─────────────────────────────────────────────────────────
+  function sigs(){
+    for(var i=0;i<4;i++) bitEls[i].classList.toggle('active',!!((addr>>i)&1));
+    addrOut.textContent='ABCD = '+addr.toString(2).padStart(4,'0')+'b ('+addr+')  →  rows '+addr+' & '+(addr+16);
+    if(phase==='shift')
+      cap.textContent='Shifting column '+col+' / 64 into row-pair '+addr+'. Each CLK pulse loads one column of RGB data.';
+    else if(hold===0)
+      cap.textContent='LATCH! Row-pair '+addr+' (rows '+addr+' & '+(addr+16)+') is now displayed. OE enables the LEDs.';
+    else
+      cap.textContent='Holding row-pair '+addr+' lit… next: row-pair '+((addr+1)%PAIRS)+'.';
+    drawWaveform();
+  }
+  function render(){ drawP1(); drawP2(); drawSR(); }
+
+  // ── tick ──────────────────────────────────────────────────────────────────
+  function tick(){
+    pushHistory();
+    if(phase==='shift'){ col++; if(col>=COLS){ phase='latch'; hold=0; } }
+    else { hold++; if(hold>=HOLD){ phase='shift'; col=0; addr=(addr+1)%PAIRS; } }
+    record();
+    sigs(); render();
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────
   bitEls.forEach(function(el){
-    el.addEventListener('click', function(){
+    el.addEventListener('click',function(){
       var b=parseInt(el.getAttribute('data-bit'),10);
-      addr ^= (1<<b); phase='shift'; col=0; hold=0;
+      addr^=(1<<b); phase='shift'; col=0; hold=0;
       playing=false; playBtn.textContent='Play';
-      sigs(); render();
+      record(); sigs(); render();
     });
   });
-  playBtn.addEventListener('click', function(){ playing=!playing; playBtn.textContent=playing?'Pause':'Play'; });
-  stepBtn.addEventListener('click', function(){ playing=false; playBtn.textContent='Play'; tick(); });
-  resetBtn.addEventListener('click', function(){ addr=0;col=0;phase='shift';hold=0; sigs(); render(); });
-  speed.addEventListener('input', function(e){ spd=parseInt(e.target.value,10); });
+  playBtn.addEventListener('click',function(){ playing=!playing; playBtn.textContent=playing?'Pause':'Play'; });
+  stepBtn.addEventListener('click',function(){ playing=false; playBtn.textContent='Play'; tick(); });
+  stepBackBtn.addEventListener('click',function(){ playing=false; playBtn.textContent='Play'; stepBack(); });
+  resetBtn.addEventListener('click',function(){
+    addr=0;col=0;phase='shift';hold=0;
+    waveBuffer=[]; stateHistory=[];
+    record(); sigs(); render();
+  });
+  speedEl.addEventListener('input',function(e){ spd=parseInt(e.target.value,10); });
 
+  // ── Animation loop ────────────────────────────────────────────────────────
   function loop(ts){
     if(last===null) last=ts;
     var dt=ts-last; last=ts;
     if(playing){ acc+=dt; var iv=1000/spd; while(acc>=iv){ tick(); acc-=iv; } }
     requestAnimationFrame(loop);
   }
-  sigs(); render(); requestAnimationFrame(loop);
+  record(); sigs(); render(); requestAnimationFrame(loop);
 })();
 </script>
 

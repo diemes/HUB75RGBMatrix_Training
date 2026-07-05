@@ -178,6 +178,23 @@
   input[type=range] { accent-color: var(--accent); }
   .hint { font-size: 12px; color: var(--text-mute); margin-top: 10px; font-style: italic; }
 
+  /* ---- RGB live pin readout ---- */
+  .rgb-pins { display: flex; flex-direction: column; gap: 8px; }
+  .rgb-pins-row { display: flex; gap: 6px; align-items: center; }
+  .rgb-pins-label { font-size: 11px; color: var(--text-mute); width: 34px; font-family: var(--mono); }
+  .pin-cell { width: 42px; height: 42px; border-radius: 7px; border: 2px solid transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 15px; font-weight: 700; background: var(--well-bg);
+    transition: all .08s; user-select: none; }
+  .pin-cell small { font-size: 8px; font-weight: 400; opacity: .7; margin-top: 1px; }
+  .pin-cell.ch-r { border-color: #ff3b30; }
+  .pin-cell.ch-g { border-color: #2ecc71; }
+  .pin-cell.ch-b { border-color: #3b82f6; }
+  .pin-cell.on-r { background: #ff3b30; color: #fff; }
+  .pin-cell.on-g { background: #2ecc71; color: #04180d; }
+  .pin-cell.on-b { background: #3b82f6; color: #fff; }
+  .pin-cell.idle { color: var(--text-mute); border-color: var(--border); }
+
   .connector-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
   .conn-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
   .conn-grid { display: flex; flex-direction: column; gap: 6px; }
@@ -428,6 +445,23 @@
         <div class="dot" id="dOe"><span>OE</span><small>GPIO14</small></div>
       </div>
     </div>
+    <div class="sig-block">
+      <div class="sig-label">RGB pin values — current pixel on CLK</div>
+      <div class="rgb-pins">
+        <div class="rgb-pins-row">
+          <span class="rgb-pins-label">Top ▸</span>
+          <div class="pin-cell" id="pR1"><span id="vR1">–</span><small>R1</small></div>
+          <div class="pin-cell" id="pG1"><span id="vG1">–</span><small>G1</small></div>
+          <div class="pin-cell" id="pB1"><span id="vB1">–</span><small>B1</small></div>
+        </div>
+        <div class="rgb-pins-row">
+          <span class="rgb-pins-label">Bot ▸</span>
+          <div class="pin-cell" id="pR2"><span id="vR2">–</span><small>R2</small></div>
+          <div class="pin-cell" id="pG2"><span id="vG2">–</span><small>G2</small></div>
+          <div class="pin-cell" id="pB2"><span id="vB2">–</span><small>B2</small></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="cap" id="cap"></div>
@@ -638,6 +672,37 @@ void loop() {
   var sr=document.getElementById('sr'),cs=sr.getContext('2d');
   var addrOut=document.getElementById('addrOut'), cap=document.getElementById('cap');
   var dClk=document.getElementById('dClk'),dLat=document.getElementById('dLat'),dOe=document.getElementById('dOe');
+  var pR1=document.getElementById('pR1'),pG1=document.getElementById('pG1'),pB1=document.getElementById('pB1');
+  var pR2=document.getElementById('pR2'),pG2=document.getElementById('pG2'),pB2=document.getElementById('pB2');
+  var vR1=document.getElementById('vR1'),vG1=document.getElementById('vG1'),vB1=document.getElementById('vB1');
+  var vR2=document.getElementById('vR2'),vG2=document.getElementById('vG2'),vB2=document.getElementById('vB2');
+
+  // Helper: parse a CSS colour string into {r,g,b} (handles #rrggbb)
+  function parseRGB(hex){
+    if(hex==='#000000') return {r:0,g:0,b:0};
+    var n=parseInt(hex.slice(1),16);
+    return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+  }
+
+  function updatePinCells(){
+    var cells = [
+      {p:pR1,v:vR1,ch:'r',row:addr,     src:'r'},
+      {p:pG1,v:vG1,ch:'g',row:addr,     src:'g'},
+      {p:pB1,v:vB1,ch:'b',row:addr,     src:'b'},
+      {p:pR2,v:vR2,ch:'r',row:addr+16,  src:'r'},
+      {p:pG2,v:vG2,ch:'g',row:addr+16,  src:'g'},
+      {p:pB2,v:vB2,ch:'b',row:addr+16,  src:'b'}
+    ];
+    cells.forEach(function(c){
+      var active = phase==='shift' && col < COLS;
+      c.p.className = 'pin-cell';
+      if(!active){ c.v.textContent='–'; c.p.classList.add('idle'); return; }
+      var rgb = parseRGB(color(c.row, col));
+      var on = (c.src==='r'&&rgb.r>0)||(c.src==='g'&&rgb.g>0)||(c.src==='b'&&rgb.b>0);
+      c.v.textContent = on ? '1' : '0';
+      c.p.classList.add(on ? 'on-'+c.ch : 'ch-'+c.ch);
+    });
+  }
   var bitEls=[].slice.call(document.querySelectorAll('.bit'));
   var playBtn=document.getElementById('play'),stepBtn=document.getElementById('step'),
       resetBtn=document.getElementById('reset'),speed=document.getElementById('speed');
@@ -686,6 +751,7 @@ void loop() {
     if(phase==='shift') cap.textContent='Shifting column '+col+' / 64 into row-pair '+addr+'. Each CLK pulse loads one column of RGB data.';
     else if(hold===0) cap.textContent='LATCH! Row-pair '+addr+' (rows '+addr+' & '+(addr+16)+') is now displayed. OE enables the LEDs.';
     else cap.textContent='Holding row-pair '+addr+' lit… next: row-pair '+((addr+1)%PAIRS)+'.';
+    updatePinCells();
   }
   function render(){ drawP1(); drawP2(); drawSR(); }
 

@@ -53,11 +53,11 @@
     font-family: var(--sans); line-height: 1.7; font-size: var(--fs);
     transition: background .2s, color .2s;
   }
-  /* frozen app bar */
-  .appbar { position: sticky; top: 0; z-index: 100;
+  /* ── App bar ─────────────────────────────────────────────────────── */
+  .appbar { position: sticky; top: 0; z-index: 200;
     background: var(--surface); border-bottom: 1px solid var(--border); }
-  .appbar-inner { max-width: 940px; margin: 0 auto; padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; }
+  .appbar-inner { padding: 10px 20px 10px 16px;
+    display: flex; align-items: center; gap: 12px; }
   .appbar-title { font-size: 15px; font-weight: 600; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .appbar-controls { margin-left: auto; display: flex; align-items: center; gap: 12px; }
@@ -77,11 +77,81 @@
     font-family: var(--sans); white-space: nowrap; }
   .theme-toggle:hover { border-color: var(--accent); }
   .theme-toggle:active { transform: scale(.97); }
+
+  /* ── Hamburger (mobile only) ─────────────────────────────────────── */
+  .hamburger { display: none; width: 34px; height: 34px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface-2); color: var(--text); font-size: 20px;
+    cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* ── Page layout (sidebar + main) ────────────────────────────────── */
+  .page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 49px); }
+
+  /* ── Left sidebar ────────────────────────────────────────────────── */
+  .sidebar {
+    position: sticky; top: 49px;
+    width: 236px; min-width: 236px;
+    height: calc(100vh - 49px); overflow-y: auto; overflow-x: hidden;
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 18px 0 40px; flex-shrink: 0;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    transition: transform .25s ease;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .sidebar-logo { padding: 0 16px 14px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .sidebar-logo .sb-tag { font-size: 10px; font-family: var(--mono); color: var(--text-mute);
+    text-transform: uppercase; letter-spacing: .09em; }
+  .sidebar-logo strong { display: block; font-size: 12.5px; color: var(--accent); margin-top: 3px; line-height: 1.4; }
+
+  .sidebar-section { padding: 10px 16px 3px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--text-mute); }
+
+  .sidebar nav a {
+    display: flex; align-items: center; gap: 9px;
+    padding: 6px 16px 6px 14px; font-size: 12.5px; color: var(--text-dim);
+    text-decoration: none; border-left: 3px solid transparent;
+    transition: all .1s; line-height: 1.35;
+  }
+  .sidebar nav a .nav-num {
+    font-family: var(--mono); font-size: 10px; color: var(--text-mute); min-width: 20px; flex-shrink: 0;
+  }
+  .sidebar nav a:hover { color: var(--text); background: var(--surface-2); border-left-color: var(--border); }
+  .sidebar nav a.active { color: var(--accent); background: var(--accent-soft);
+    border-left-color: var(--accent); font-weight: 600; }
+  .sidebar nav a.active .nav-num { color: var(--accent); }
+
+  /* Dark overlay when sidebar slides in on mobile */
+  .sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 149;
+    background: rgba(0,0,0,.5); backdrop-filter: blur(2px); }
+  .sidebar-overlay.open { display: block; }
+
+  /* ── Main content ────────────────────────────────────────────────── */
+  .wrap { flex: 1; min-width: 0; max-width: 100%; margin: 0; padding: 32px 36px 80px; }
+
+  /* Hide inline TOC card on wide screens (sidebar replaces it) */
+  @media (min-width: 860px) { nav.toc { display: none; } }
+
+  /* ── Responsive ──────────────────────────────────────────────────── */
+  @media (max-width: 859px) {
+    .hamburger { display: flex; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; z-index: 150;
+      height: 100vh; transform: translateX(-100%);
+      box-shadow: 6px 0 32px rgba(0,0,0,.5);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .page-layout { display: block; }
+    .wrap { padding: 24px 16px 60px; }
+  }
   @media (max-width: 560px) {
     .appbar-title { font-size: 13px; }
     .theme-toggle span.lbl { display: none; }
   }
-  .wrap { max-width: 940px; margin: 0 auto; padding: 32px 20px 80px; }
+
   header.hero {
     border: 1px solid var(--border); border-radius: 16px;
     background: linear-gradient(160deg, #14202e, #0e1116);
@@ -227,6 +297,7 @@
 
 <div class="appbar">
   <div class="appbar-inner">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
     <div class="appbar-title">HUB75 RGB Matrix — Study Guide</div>
     <div class="appbar-controls">
       <div class="fontctl" role="group" aria-label="Font size">
@@ -241,7 +312,44 @@
   </div>
 </div>
 
-<div class="wrap">
+<div class="page-layout">
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Left Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="sb-tag">Study Guide</span>
+      <strong>HUB75 LED Matrix</strong>
+    </div>
+    
+    <div class="sidebar-section">Hardware & Theory</div>
+    <nav>
+      <a href="#safety"><span class="nav-num">01</span> Safety first</a>
+      <a href="#inside"><span class="nav-num">02</span> What's inside</a>
+      <a href="#pins"><span class="nav-num">03</span> The HUB75 pins</a>
+      <a href="#fewpins"><span class="nav-num">04</span> Multiplexing</a>
+      <a href="#sim"><span class="nav-num">05</span> Interactive animation</a>
+    </nav>
+    
+    <div class="sidebar-section">Project Setup</div>
+    <nav>
+      <a href="#materials"><span class="nav-num">06</span> Materials & tools</a>
+      <a href="#software"><span class="nav-num">07</span> Software setup</a>
+      <a href="#wiring"><span class="nav-num">08</span> Wiring & power</a>
+    </nav>
+    
+    <div class="sidebar-section">Code & Reference</div>
+    <nav>
+      <a href="#code"><span class="nav-num">09</span> The test sketch</a>
+      <a href="#text"><span class="nav-num">10</span> Writing text</a>
+      <a href="#trouble"><span class="nav-num">11</span> Troubleshooting</a>
+      <a href="#sources"><span class="nav-num">12</span> Sources & refs</a>
+    </nav>
+  </aside>
+
+  <div class="wrap">
 
 <header class="hero">
   <h1>HUB75 RGB LED Matrix — Interactive Study Guide</h1>
@@ -404,20 +512,7 @@
 </div>
 
 <div class="sim" id="sim">
-  <div class="sim-row">
-    <div class="sim-panel">
-      <div class="title">What your eyes perceive</div>
-      <canvas id="p1" width="384" height="192"></canvas>
-      <div class="sub">Full image — persistence of vision blends every flash together.</div>
-    </div>
-    <div class="sim-panel">
-      <div class="title">What is electrically active right now</div>
-      <canvas id="p2" width="384" height="192"></canvas>
-      <div class="sub">Only the addressed row-pair is lit; a white box marks the column being clocked in.</div>
-    </div>
-  </div>
-
-  <div class="sim-panel" style="margin-top:16px;">
+  <div class="sim-panel">
     <div class="title">Shift register — one column loads per CLK pulse</div>
     <canvas id="sr" width="384" height="34"></canvas>
     <div class="sr-labels">
@@ -446,14 +541,27 @@
 
   <div class="cap" id="cap"></div>
 
-  <div class="ctrls">
+  <div class="ctrls" style="margin-bottom: 24px;">
     <button class="btn" id="stepBack">&#9664; Step</button>
     <button class="btn" id="play">Pause</button>
     <button class="btn" id="step">Step &#9654;</button>
     <button class="btn" id="reset">Reset</button>
     <label class="slabel">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
   </div>
-  <div class="hint">Drag speed far left then use <strong>&#9664; Step</strong> / <strong>Step &#9654;</strong> one clock at a time — watch the waveform build left-to-right and LAT/OE fire at the row boundary.</div>
+  <div class="hint" style="margin-bottom: 24px;">Drag speed far left then use <strong>&#9664; Step</strong> / <strong>Step &#9654;</strong> one clock at a time — watch the waveform build left-to-right and LAT/OE fire at the row boundary.</div>
+
+  <div class="sim-row">
+    <div class="sim-panel">
+      <div class="title">What your eyes perceive</div>
+      <canvas id="p1" width="384" height="192"></canvas>
+      <div class="sub">Full image — persistence of vision blends every flash together.</div>
+    </div>
+    <div class="sim-panel">
+      <div class="title">What is electrically active right now</div>
+      <canvas id="p2" width="384" height="192"></canvas>
+      <div class="sub">Only the addressed row-pair is lit; a white box marks the column being clocked in.</div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ MATERIALS ============ -->
@@ -510,17 +618,17 @@ uint8_t rgbPins[]  = {42, 41, 40, 38, 39, 37};
 uint8_t addrPins[] = {45, 36, 48, 35};
 //                     A   B   C   D   (4 pins = 1/16 scan = 32 rows)
 
-uint8_t clockPin   = 2;    // CLK
-uint8_t latchPin   = 47;   // LAT
-uint8_t oePin      = 14;   // OE
+uint8_t clockPin   = 2;    // CLK  — shifts one column of data per pulse
+uint8_t latchPin   = 47;   // LAT  — copies the shift register to the output
+uint8_t oePin      = 14;   // OE   — active-LOW: LOW = LEDs on
 
 Adafruit_Protomatter matrix(
   PANEL_WIDTH,               // pixels per row
-  4,                         // bit depth per channel (BCM steps -> color smoothness)
-  1, rgbPins,                // 1 RGB pin-set (no chaining), then the array
-  sizeof(addrPins), addrPins,// number of address pins, then the array
+  4,                         // bit depth per channel — see BCM explanation below
+  1, rgbPins,                // 1 chain (no daisy-chaining), then the RGB pin array
+  sizeof(addrPins), addrPins,// number of address pins (4 = 1/16 scan), then the array
   clockPin, latchPin, oePin,
-  false                      // double-buffering off
+  false                      // double-buffering off (single frame buffer)
 );
 
 void setup() {
@@ -529,17 +637,64 @@ void setup() {
   Serial.printf("Protomatter status: %d\n", status);  // 0 == OK
 
   matrix.setBrightness(40);   // START LOW (0-255). Low current, low heat.
-  matrix.fillScreen(0);
-  matrix.setTextColor(matrix.color565(0, 255, 0));
-  matrix.setCursor(2, 12);
-  matrix.print("Hello!");
-  matrix.show();
+
+  matrix.fillScreen(0);       // 0 = black (color565 for pure black). Clears
+                              // every pixel in the frame buffer to off. Call
+                              // this before drawing each new frame so old
+                              // pixels don't persist.
+
+  matrix.setTextColor(        // Pick the text color. color565() converts
+    matrix.color565(0, 255, 0)// R, G, B (0-255 each) to the 16-bit color565
+  );                          // format the library uses internally.
+
+  matrix.setCursor(2, 12);    // Move the text pen to column 2, row 12 (pixels).
+                              // (0,0) is the top-left corner.
+  matrix.print("Hello!");     // Draw the string into the frame buffer.
+  matrix.show();              // Push the frame buffer to the panel hardware.
+                              // Nothing appears on the physical LEDs until
+                              // this is called.
 }
 
 void loop() { }
 </code></pre>
 
 <div class="callout info"><strong>Where did the height go?</strong> You never write "32". Protomatter derives it from the number of address pins: 4 address pins &rarr; 2<sup>4</sup>&times;2 = 32 rows — exactly the scan-rate math from Section 04. Swap to a 64&times;64 panel later and you'd add the <code>E</code> pin (GPIO 16 or 8 per the board jumper), making 5 address pins and an automatic height of 64.</div>
+
+<h3>Bit depth = 4: how BCM turns 1-bit HUB75 pins into smooth color</h3>
+<p>Each HUB75 color pin (<code>R1</code>, <code>G1</code>, <code>B1</code>&hellip;) is just <em>one wire</em> — it is either HIGH or LOW at any instant. So how can a pixel ever look anything other than fully-on or fully-off for each channel? The answer is <strong>Binary Code Modulation (BCM)</strong>, and the <code>4</code> you pass to the constructor controls it.</p>
+
+<div class="card">
+  <h3 style="margin-top:0;">BCM step by step (bit depth = 4 example)</h3>
+  <p>With bit depth 4, the library splits every complete frame refresh into <strong>4 BCM passes</strong>. Each pass lights the pixels for a different duration, weighted by powers of 2:</p>
+  <table>
+    <thead><tr><th>BCM pass</th><th>On-time weight</th><th>Fraction of frame</th><th>Adds brightness level</th></tr></thead>
+    <tbody>
+      <tr><td>Pass 0 (bit 0 — LSB)</td><td>1&times;</td><td>1/15</td><td>+1 step</td></tr>
+      <tr><td>Pass 1 (bit 1)</td><td>2&times;</td><td>2/15</td><td>+2 steps</td></tr>
+      <tr><td>Pass 2 (bit 2)</td><td>4&times;</td><td>4/15</td><td>+4 steps</td></tr>
+      <tr><td>Pass 3 (bit 3 — MSB)</td><td>8&times;</td><td>8/15</td><td>+8 steps</td></tr>
+    </tbody>
+  </table>
+  <p>By choosing which passes to light a pixel in, the library can produce <strong>2<sup>4</sup> = 16 distinct brightness levels</strong> per channel (0 through 15). Your eye averages the rapidly-alternating flashes into a perceived intermediate brightness — exactly the same persistence-of-vision trick as the row multiplexing itself.</p>
+  <p><strong>Bit depth vs. color levels:</strong></p>
+  <ul>
+    <li>Bit depth&nbsp;1 &rarr; 2 levels per channel &rarr; 2&sup3; = 8 colors</li>
+    <li>Bit depth&nbsp;4 &rarr; 16 levels per channel &rarr; 16&sup3; = <strong>4 096 colors</strong></li>
+    <li>Bit depth&nbsp;6 &rarr; 64 levels per channel &rarr; 64&sup3; = <strong>262 144 colors</strong></li>
+  </ul>
+  <p>So <code>4</code> gives you 4&nbsp;096 physical colors, not the 16&nbsp;million that 8-bit-per-channel would give. The library accepts up to 6 (hardware limit on the ESP32-S3 with this panel topology).</p>
+</div>
+
+<div class="callout info"><strong>Why not just set bit depth = 8 and get 16 million colors?</strong> Because BCM requires the processor to redraw the entire panel once per BCM pass, per frame. At bit depth 8, that is 8 redraws &times; 16 row-pairs &times; 64 clock pulses = thousands of tight GPIO operations per second — more than the ESP32-S3 can sustain without DMA. The practical limit with Protomatter on this board is bit depth <strong>4&ndash;6</strong>. Higher depth = smoother gradients but slower refresh rate and more CPU load.</div>
+
+<h3>How color565 and 256<sup>3</sup> color work in practice</h3>
+<p><code>matrix.color565(R, G, B)</code> takes three values from 0&ndash;255 (the full 8-bit-per-channel range) and packs them into a single 16-bit integer in the <strong>RGB565</strong> format used by the GFX library:</p>
+<ul>
+  <li>Red:   the top 5 bits of the 8-bit R value (256 levels &rarr; 32 levels)</li>
+  <li>Green: the top 6 bits of the 8-bit G value (256 levels &rarr; 64 levels) — gets one extra bit because human eyes are most sensitive to green</li>
+  <li>Blue:  the top 5 bits of the 8-bit B value (256 levels &rarr; 32 levels)</li>
+</ul>
+<p>So the <em>logical</em> color space you work with in code is 65&nbsp;536 colors (5+6+5 bits), but the <em>physical</em> panel can only display as many distinct shades as the BCM bit depth allows. With bit depth 4, the top 4 bits of each channel's 5-or-6-bit value reach the LEDs; the lower bits are discarded. The full theoretical 256&sup3; = <strong>16&nbsp;777&nbsp;216 colors</strong> is what you get only if you had 8-bit BCM and analog LED drivers — raw HUB75 panels approximate it through PWM/BCM, not through true analog current control.</p>
 
 <h3>The pin-to-code cheat sheet</h3>
 <table>
@@ -555,32 +710,81 @@ void loop() { }
 
 <!-- ============ TEXT ============ -->
 <h2 id="text"><span class="n">10</span>Writing text on the matrix</h2>
-<p>Protomatter is an Adafruit-GFX display, so text works exactly like on any Adafruit screen. The essential moves:</p>
-<pre><code>matrix.setTextWrap(false);                 // let long text run off-screen (for scrolling)
-matrix.setTextSize(1);                      // 1 = 6x8 px font (fits ~10 chars wide on 64px)
-matrix.setTextColor(matrix.color565(255, 120, 0)); // R,G,B each 0-255
-matrix.setCursor(x, y);                     // top-left of the text; y is the TOP of the glyph
-matrix.fillScreen(0);                       // clear to black first
-matrix.print("HELLO");
-matrix.show();                              // nothing appears until you call show()</code></pre>
+<p>Protomatter inherits from <strong>Adafruit GFX</strong>, the foundation library for all Adafruit displays. Drawing happens in a frame buffer in RAM; nothing updates on the physical panel until you call <code>matrix.show()</code>. Always call <code>fillScreen()</code> first to clear the previous frame, draw your content, then call <code>show()</code>.</p>
 
-<div class="callout tip"><strong>Two rules people forget:</strong> (1)&nbsp;nothing is visible until <code>matrix.show()</code>. (2)&nbsp;<code>setCursor(x, y)</code> uses the <em>top-left</em> corner of the text, and with the default size-1 font each character is 6&times;8 px, so <code>setCursor(0, 0)</code> puts text flush in the top-left and it occupies rows 0&ndash;7.</div>
+<div class="card">
+  <h3 style="margin-top:0;">Text function reference</h3>
+  <table>
+    <thead><tr><th>Function call</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>matrix.fillScreen(0)</code></td>
+        <td>Fills every pixel in the frame buffer with a color. <code>0</code> is black (all channels off). Call this at the start of each frame to erase whatever was drawn before. You can also pass any <code>color565()</code> value to fill with a solid color instead of black.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.setTextColor(c)</code></td>
+        <td>Sets the foreground color for all text drawn after this call. <code>c</code> must be a 16-bit color565 value — use <code>matrix.color565(R, G, B)</code> to convert your RGB values. Text background is transparent by default (only lit pixels are drawn; the dark background shows through). You can also call <code>matrix.setTextColor(fg, bg)</code> with two arguments to make the background opaque — useful on busy backgrounds.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.color565(R, G, B)</code></td>
+        <td>Converts three 0&ndash;255 channel values into the single 16-bit integer the library uses. Examples: <code>color565(255,0,0)</code>&nbsp;= red, <code>color565(0,255,0)</code>&nbsp;= green, <code>color565(255,255,255)</code>&nbsp;= white, <code>color565(0,0,0)</code>&nbsp;= black (same as <code>0</code>). Orange: <code>color565(255,80,0)</code>.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.setTextSize(n)</code></td>
+        <td>Scales the built-in bitmap font. Size&nbsp;1 = 6&times;8&nbsp;px per character (fits ~10 characters across a 64-px-wide panel). Size&nbsp;2 = 12&times;16&nbsp;px (fits ~5 chars). Size&nbsp;3 = 18&times;24&nbsp;px (fits ~3 chars and is taller than the 32-row panel). Almost always use <code>1</code> for a 64&times;32 panel.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.setCursor(x, y)</code></td>
+        <td>Moves the drawing pen to pixel column <code>x</code>, pixel row <code>y</code>. <code>(0, 0)</code> is the top-left corner. <code>y</code> is the <em>top</em> of the glyph, not the baseline. The default font is 8&nbsp;px tall, so valid y values for a 32-row panel are 0&ndash;24 (anything &gt;24 means the text is partially clipped at the bottom).</td>
+      </tr>
+      <tr>
+        <td><code>matrix.setTextWrap(bool)</code></td>
+        <td>When <code>true</code> (default), text that reaches the right edge wraps down to the next line. Set to <code>false</code> when you want text to scroll off the right side — required for horizontal scrolling.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.print("text")</code></td>
+        <td>Draws the string starting at the current cursor position using the current color and size. Accepts any Arduino <code>Print</code>-compatible type: <code>print("hello")</code>, <code>print(42)</code>, <code>print(3.14)</code>. Advances the cursor automatically after each character. Does <strong>not</strong> update the physical panel.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.show()</code></td>
+        <td><strong>The most important call.</strong> Copies the frame buffer to the panel hardware and starts the scanning loop. Nothing is visible on the physical LEDs until this is called. Call it once at the end of each frame — not after every individual drawing call.</td>
+      </tr>
+      <tr>
+        <td><code>matrix.width()</code> / <code>matrix.height()</code></td>
+        <td>Returns the panel dimensions in pixels (64 and 32 respectively). Use these instead of hard-coding numbers so the same code works if you swap panels later.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
-<h3>Simple scrolling text</h3>
-<pre><code>int16_t x = matrix.width();       // start just off the right edge
+<div class="callout tip"><strong>Drawing order matters.</strong> Always call <code>fillScreen(0)</code> first, then draw text/graphics, then call <code>show()</code>. Calling <code>show()</code> before drawing gives you a black flash. Calling <code>show()</code> without <code>fillScreen()</code> keeps the old frame as a ghost under the new one.</div>
+
+<h3>Minimal example with every function explained</h3>
+<pre><code>// In setup() — static "Hello" in green:
+matrix.fillScreen(0);                        // 1. clear the buffer
+matrix.setTextWrap(false);                   // 2. don't wrap (we scroll later)
+matrix.setTextSize(1);                       // 3. default 6x8 px font
+matrix.setTextColor(matrix.color565(0,255,0)); // 4. green text
+matrix.setCursor(2, 12);                     // 5. column 2, row 12
+matrix.print("Hello!");                      // 6. draw into buffer
+matrix.show();                               // 7. push buffer to LEDs</code></pre>
+
+<h3>Horizontal scrolling text</h3>
+<pre><code>int16_t x = matrix.width();       // start just off the right edge (x = 64)
 const char *msg = "SCROLLING TEXT DEMO";
 
 void loop() {
-  matrix.fillScreen(0);
-  matrix.setCursor(x, 12);
-  matrix.setTextColor(matrix.color565(0, 200, 255));
+  matrix.fillScreen(0);                            // erase previous frame
+  matrix.setCursor(x, 12);                         // current scroll position
+  matrix.setTextColor(matrix.color565(0, 200, 255)); // cyan-ish
   matrix.print(msg);
-  matrix.show();
+  matrix.show();                                   // update physical panel
 
-  if (--x &lt; -((int16_t)strlen(msg) * 6)) x = matrix.width(); // wrap when fully off-screen
-  delay(30);                        // scroll speed
+  if (--x &lt; -((int16_t)strlen(msg) * 6))          // 6 px per char at size 1
+    x = matrix.width();                            // reset to right edge
+  delay(30);                                       // ~33 fps scroll speed
 }</code></pre>
-<p>Each size-1 character is 6&nbsp;px wide, so <code>strlen(msg) * 6</code> is the pixel width of the whole string — once <code>x</code> has moved that far past the left edge, reset it to the right edge to loop.</p>
+<p><code>strlen(msg) * 6</code> is the total pixel width of the string at size&nbsp;1. When <code>x</code> goes that many pixels past the left edge, the text is fully gone and we reset to the right.</p>
 
 <!-- ============ TROUBLESHOOTING ============ -->
 <h2 id="trouble"><span class="n">11</span>Troubleshooting</h2>
@@ -917,6 +1121,47 @@ void loop() {
   fsMinus.addEventListener('click',function(){ fs-=STEP; localStorage.setItem(FS_KEY,fs); applyFs(); });
 
   applyTheme(); applyFs();
+
+  // ── Hamburger menu logic ──────────────────────────────────────────────────
+  var hamburger = document.getElementById('hamburger');
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  function toggleMenu() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+  }
+  if(hamburger) {
+    hamburger.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
+    // Close on nav click (mobile)
+    var navLinks = sidebar.querySelectorAll('a');
+    navLinks.forEach(function(l){
+      l.addEventListener('click', function(){
+        if(window.innerWidth <= 859) toggleMenu();
+      });
+    });
+  }
+
+  // ── Active link highlighting (IntersectionObserver) ───────────────────────
+  var sections = document.querySelectorAll('h2[id]');
+  var navItems = sidebar.querySelectorAll('a');
+  var observerOptions = {
+    root: null,
+    rootMargin: '0px 0px -60% 0px',
+    threshold: 0.1
+  };
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if(entry.isIntersecting) {
+        var id = entry.target.getAttribute('id');
+        navItems.forEach(function(a){
+          a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, observerOptions);
+  sections.forEach(function(sec){ observer.observe(sec); });
+
 })();
 </script>
 </body>

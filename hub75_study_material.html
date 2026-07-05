@@ -291,7 +291,12 @@
   footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border);
     color: var(--text-mute); font-size: 13px; }
   a.link { color: var(--accent); }
+
+  /* Prism.js Overrides for our dark background */
+  pre[class*="language-"] { background: #0a0d12 !important; border: 1px solid var(--border) !important; border-radius: 10px !important; margin: 16px 0 !important; }
+  code[class*="language-"], pre[class*="language-"] { color: #d7e2ee !important; font-size: calc(var(--fs) * 0.84) !important; line-height: 1.6 !important; text-shadow: none !important; font-family: var(--mono) !important; }
 </style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
 <body>
 
@@ -608,7 +613,7 @@
 <h2 id="code"><span class="n">09</span>The test sketch — how the pins map to code</h2>
 <p>The HUB75 signals don't have universal GPIO numbers; Adafruit wired each one to a specific ESP32-S3 pin on this board. The sketch just tells Protomatter which GPIO is which. The <strong>order inside each array matters</strong> — it must match the physical wiring.</p>
 
-<pre><code>#include &lt;Adafruit_Protomatter.h&gt;
+<pre><code class="language-arduino">#include &lt;Adafruit_Protomatter.h&gt;
 
 #define PANEL_WIDTH  64
 
@@ -760,7 +765,7 @@ void loop() { }
 <div class="callout tip"><strong>Drawing order matters.</strong> Always call <code>fillScreen(0)</code> first, then draw text/graphics, then call <code>show()</code>. Calling <code>show()</code> before drawing gives you a black flash. Calling <code>show()</code> without <code>fillScreen()</code> keeps the old frame as a ghost under the new one.</div>
 
 <h3>Minimal example with every function explained</h3>
-<pre><code>// In setup() — static "Hello" in green:
+<pre><code class="language-arduino">// In setup() — static "Hello" in green:
 matrix.fillScreen(0);                        // 1. clear the buffer
 matrix.setTextWrap(false);                   // 2. don't wrap (we scroll later)
 matrix.setTextSize(1);                       // 3. default 6x8 px font
@@ -770,7 +775,7 @@ matrix.print("Hello!");                      // 6. draw into buffer
 matrix.show();                               // 7. push buffer to LEDs</code></pre>
 
 <h3>Horizontal scrolling text</h3>
-<pre><code>int16_t x = matrix.width();       // start just off the right edge (x = 64)
+<pre><code class="language-arduino">int16_t x = matrix.width();       // start just off the right edge (x = 64)
 const char *msg = "SCROLLING TEXT DEMO";
 
 void loop() {
@@ -1164,5 +1169,9 @@ void loop() {
 
 })();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-arduino.min.js"></script>
 </body>
 </html>

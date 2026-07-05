@@ -1,20 +1,61 @@
-# Arduino build artifacts
+# ──────────────────────────────────────────
+# Arduino / PlatformIO build artifacts
+# ──────────────────────────────────────────
 build/
+.pio/
+.pioenvs/
+.piolibdeps/
 *.elf
 *.hex
 *.bin
 *.map
+*.d
+*.a
+*.o
 
-# VS Code / editors
+# Arduino IDE generated files
+*.bak
+*~
+
+# ──────────────────────────────────────────
+# Editors & IDEs
+# ──────────────────────────────────────────
 .vscode/
+.idea/
 *.code-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ──────────────────────────────────────────
+# Claude / Antigravity IDE tooling
+# ──────────────────────────────────────────
+.claude/
+
+# ──────────────────────────────────────────
+# Operating System files
+# ──────────────────────────────────────────
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
 
 # Windows
 Thumbs.db
-desktop.ini
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Node (if ever added)
+# ──────────────────────────────────────────
+# Node / Web tooling (future-proofing)
+# ──────────────────────────────────────────
 node_modules/
+dist/
+.cache/
+*.log

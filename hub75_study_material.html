@@ -831,7 +831,7 @@ void loop() {
     P: ['####','#..#','#..#','####','#...','#...','#...','#...'],
     S: ['####','#...','#...','####','...#','...#','...#','####']
   };
-  var LETTER_COLOR = { T:'#ff3b30', P:'#2ecc71', S:'#3b82f6' };
+  var LETTER_COLOR = { T:'#ff0000', P:'#00ff00', S:'#0044ff' };
   var ART = [];
   for (var r=0; r<8; r++)
     ART.push('.' + GLYPH.T[r] + '.' + GLYPH.P[r] + '.' + GLYPH.S[r] + '.');
@@ -901,8 +901,8 @@ void loop() {
       a:(addr>>0)&1, b:(addr>>1)&1, c:(addr>>2)&1, d:(addr>>3)&1,
       lat:(phase==='latch'&&hold===0)?1:0,
       oe: phase==='latch'?1:0,
-      r1:shifting&&top.r>0?1:0, g1:shifting&&top.g>0?1:0, b1:shifting&&top.b>0?1:0,
-      r2:shifting&&bot.r>0?1:0, g2:shifting&&bot.g>0?1:0, b2:shifting&&bot.b>0?1:0
+      r1:shifting&&top.r>127?1:0, g1:shifting&&top.g>127?1:0, b1:shifting&&top.b>127?1:0,
+      r2:shifting&&bot.r>127?1:0, g2:shifting&&bot.g>127?1:0, b2:shifting&&bot.b>127?1:0
     };
   }
   function record(){ waveBuffer.push(snapshot()); if(waveBuffer.length>MAX_BUF) waveBuffer.shift(); }

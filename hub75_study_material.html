@@ -211,18 +211,20 @@
   .danger-banner h3 { margin-top: 0; color: var(--danger); }
 
   /* ---- interactive sim ---- */
-  .sim { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 20px 0; }
-  .sim-row { display: flex; gap: 16px; flex-wrap: wrap; }
-  .sim-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; flex: 1; min-width: 260px; }
-  .sim-panel .title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-  .sim-panel .sub { font-size: 12px; color: var(--text-mute); margin-top: 8px; }
+  .sim { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 14px; margin: 20px 0; max-width: 1150px; }
+  .sim-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sim-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; flex: 1; min-width: 260px; }
+  .sim-panel .title { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .sim-panel .sub { font-size: 11.5px; color: var(--text-mute); margin-top: 6px; }
+  #p1, #p2 { max-width: 360px; }
+  #sr { max-width: 480px; }
   .sim canvas { display: block; width: 100%; height: auto; background: #000; border-radius: 6px; image-rendering: pixelated; }
   .sr-labels { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--text-mute); margin-top: 6px; }
   .sig-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
   .sig-block { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; flex: 1; min-width: 240px; }
   .sig-label { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
   .bits { display: flex; gap: 8px; }
-  .bit { width: 46px; height: 46px; border-radius: 7px; border: 1px solid var(--border);
+  .bit { width: 42px; height: 42px; border-radius: 7px; border: 1px solid var(--border);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-family: var(--mono); font-size: 14px; color: var(--text-dim); background: var(--well-bg);
     cursor: pointer; transition: all .12s; user-select: none; }
@@ -237,7 +239,7 @@
   .dot.clk { background: var(--accent); color: #04101f; }
   .dot.lat { background: var(--danger); color: #1c0608; }
   .dot.oe  { background: var(--ok); color: #04180d; }
-  .cap { min-height: 40px; font-size: 13.5px; color: var(--text-dim); margin-top: 14px; padding: 10px 12px;
+  .cap { min-height: 0; font-size: 13px; color: var(--text-dim); margin-top: 14px; padding: 7px 12px;
     background: var(--well-bg); border-radius: 8px; border: 1px solid var(--border); }
   .ctrls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
   .btn { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
@@ -517,54 +519,56 @@
 </div>
 
 <div class="sim" id="sim">
-  <div class="sim-panel">
-    <div class="title">Shift register — one column loads per CLK pulse</div>
-    <canvas id="sr" width="384" height="34"></canvas>
-    <div class="sr-labels">
-      <span>Top row &rarr; R1/G1/B1 &nbsp;(GPIO 42/41/40)</span>
-      <span>Bottom row &rarr; R2/G2/B2 &nbsp;(GPIO 38/39/37)</span>
+  <div class="sim-row" style="align-items: center;">
+    <div class="cap" id="cap" style="flex:1; margin-top:0; min-height:0;"></div>
+    <div class="ctrls" style="margin-top:0;">
+      <button class="btn" id="stepBack">&#9664; Step</button>
+      <button class="btn" id="play">Pause</button>
+      <button class="btn" id="step">Step &#9654;</button>
+      <button class="btn" id="reset">Reset</button>
+      <label class="slabel">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
     </div>
-  </div>
-
-  <!-- Address bits (compact strip, still clickable) -->
-  <div class="sig-block" style="margin-top:16px;">
-    <div class="sig-label">Address bits — click any bit to jump to that row-pair</div>
-    <div class="bits" id="bits">
-      <div class="bit" data-bit="0"><span>A</span><small>GPIO45</small></div>
-      <div class="bit" data-bit="1"><span>B</span><small>GPIO36</small></div>
-      <div class="bit" data-bit="2"><span>C</span><small>GPIO48</small></div>
-      <div class="bit" data-bit="3"><span>D</span><small>GPIO35</small></div>
-    </div>
-    <div class="addr-out" id="addrOut"></div>
   </div>
 
   <!-- Digital waveform -->
-  <div class="sim-panel" style="margin-top:12px; padding:12px 14px;">
-    <div class="title">Signal waveform <span style="font-weight:400;color:var(--text-mute);font-size:11px;">&mdash; last 80 steps &mdash; CLK &middot; A B C D &middot; LAT &middot; OE &middot; R1 G1 B1 &middot; R2 G2 B2</span></div>
-    <canvas id="wc" width="800" height="286" style="width:100%;height:auto;display:block;border-radius:6px;margin-top:8px;"></canvas>
+  <div class="sim-panel" style="margin-top:12px;">
+    <div class="title">Signal waveform <span style="font-weight:400;color:var(--text-mute);font-size:11px;">&mdash; last 80 steps. CLK is a <em>gated</em> data clock: the flat gap during latch is correct. OE is active-LOW: HIGH = blanked.</span></div>
+    <canvas id="wc" width="800" height="169" style="width:100%;height:169px;display:block;border-radius:6px;margin-top:6px;"></canvas>
   </div>
 
-  <div class="cap" id="cap"></div>
-
-  <div class="ctrls" style="margin-bottom: 24px;">
-    <button class="btn" id="stepBack">&#9664; Step</button>
-    <button class="btn" id="play">Pause</button>
-    <button class="btn" id="step">Step &#9654;</button>
-    <button class="btn" id="reset">Reset</button>
-    <label class="slabel">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
-  </div>
-  <div class="hint" style="margin-bottom: 24px;">Drag speed far left then use <strong>&#9664; Step</strong> / <strong>Step &#9654;</strong> one clock at a time — watch the waveform build left-to-right and LAT/OE fire at the row boundary.</div>
-
-  <div class="sim-row">
+  <div class="sim-row" style="margin-top:12px;">
     <div class="sim-panel">
       <div class="title">What your eyes perceive</div>
       <canvas id="p1" width="384" height="192"></canvas>
-      <div class="sub">Full image — persistence of vision blends every flash together.</div>
+      <div class="sub">Persistence of vision blends every flash into one image.</div>
     </div>
     <div class="sim-panel">
       <div class="title">What is electrically active right now</div>
       <canvas id="p2" width="384" height="192"></canvas>
-      <div class="sub">Only the addressed row-pair is lit; a white box marks the column being clocked in.</div>
+      <div class="sub">Only the addressed row-pair is lit; white box = column being clocked in.</div>
+    </div>
+  </div>
+
+  <div class="sim-row" style="margin-top:12px;">
+    <div class="sim-panel">
+      <div class="title">Shift register — one column loads per CLK pulse</div>
+      <canvas id="sr" width="384" height="34"></canvas>
+      <div class="sr-labels">
+        <span>Top row &rarr; R1/G1/B1 &nbsp;(GPIO 42/41/40)</span>
+        <span>Bottom row &rarr; R2/G2/B2 &nbsp;(GPIO 38/39/37)</span>
+      </div>
+    </div>
+
+    <!-- Address bits (compact strip, still clickable) -->
+    <div class="sig-block" style="margin-top:0;">
+      <div class="sig-label">Address bits — click any bit to jump to that row-pair</div>
+      <div class="bits" id="bits">
+        <div class="bit" data-bit="0"><span>A</span><small>GPIO45</small></div>
+        <div class="bit" data-bit="1"><span>B</span><small>GPIO36</small></div>
+        <div class="bit" data-bit="2"><span>C</span><small>GPIO48</small></div>
+        <div class="bit" data-bit="3"><span>D</span><small>GPIO35</small></div>
+      </div>
+      <div class="addr-out" id="addrOut"></div>
     </div>
   </div>
 </div>
@@ -946,13 +950,21 @@ void loop() {
   }
 
   // ── Draw waveform ─────────────────────────────────────────────────────────
-  var LW=38, ROW_H=22, PAD=3;
+  var LW=38, ROW_H=13, PAD=2;
+  function fitWave(){
+    // Render at the element's real on-screen width so pulses stay crisp and
+    // evenly spaced instead of being stretched from a fixed 800px bitmap.
+    var w=Math.round(wc.clientWidth||wc.parentNode.clientWidth||800);
+    if(w>0 && wc.width!==w) wc.width=w;
+    if(wc.height!==SIGS.length*ROW_H) wc.height=SIGS.length*ROW_H;
+  }
   function drawWaveform(){
+    fitWave();
     var W=wc.width, H=wc.height;
     var SW=W-LW;                         // signal area width
     var vis=waveBuffer.slice(-MAX_VIS);
     var N=vis.length;
-    var sw=N>0?SW/MAX_VIS:SW/MAX_VIS;    // step width (fixed scale)
+    var sw=SW/MAX_VIS;                   // step width (fixed scale)
 
     // Background
     cw.fillStyle='#0a0d12';
@@ -1053,17 +1065,19 @@ void loop() {
   // ── sigs / render ─────────────────────────────────────────────────────────
   function sigs(){
     for(var i=0;i<4;i++) bitEls[i].classList.toggle('active',!!((addr>>i)&1));
-    addrOut.textContent='ABCD = '+addr.toString(2).padStart(4,'0')+'b ('+addr+')  →  rows '+addr+' & '+(addr+16);
+    // A is the least-significant bit: value = A + 2B + 4C + 8D
+    addrOut.textContent='A='+((addr>>0)&1)+' B='+((addr>>1)&1)+' C='+((addr>>2)&1)+' D='+((addr>>3)&1)
+      +'  →  row-pair '+addr+' (rows '+addr+' & '+(addr+16)+')';
     if(phase==='shift')
-      cap.textContent='Shifting column '+col+' / 64 into row-pair '+addr+'. CLK pulses to load data.';
+      cap.textContent='Shifting column '+col+' / 64 into row-pair '+addr+'. One CLK pulse per column.';
     else if(hold===0)
-      cap.textContent='LATCH PHASE: OE goes HIGH (blanks display) to prevent ghosting.';
+      cap.textContent='LATCH PHASE: CLK stops (all 64 columns are in). OE goes HIGH — display blanked to prevent ghosting.';
     else if(hold===1)
-      cap.textContent='LATCH PHASE: LAT pulses HIGH to copy shift register data to output buffers.';
+      cap.textContent='LATCH PHASE: LAT pulses HIGH — shift register copied to the LED output buffers.';
     else if(hold>1 && hold<=4)
-      cap.textContent='LATCH PHASE: Holding OE HIGH... preparing to unblank.';
+      cap.textContent='LATCH PHASE: holding OE HIGH… (in real hardware this on/off timing of OE sets brightness).';
     else
-      cap.textContent='LATCH PHASE: OE goes LOW (unblanks). Row-pair '+addr+' is displayed!';
+      cap.textContent='LATCH PHASE: OE goes LOW (active-low = LEDs on). Row-pair '+addr+' is displayed!';
     drawWaveform();
   }
   function render(){ drawP1(); drawP2(); drawSR(); }
@@ -1103,6 +1117,7 @@ void loop() {
     if(playing){ acc+=dt; var iv=1000/spd; while(acc>=iv){ tick(); acc-=iv; } }
     requestAnimationFrame(loop);
   }
+  window.addEventListener('resize', drawWaveform);
   record(); sigs(); render(); requestAnimationFrame(loop);
 })();
 </script>

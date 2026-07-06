@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -211,24 +211,24 @@
   .danger-banner h3 { margin-top: 0; color: var(--danger); }
 
   /* ---- interactive sim ---- */
-  .sim { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 20px 0; }
-  .sim-row { display: flex; gap: 16px; flex-wrap: wrap; }
-  .sim-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; flex: 1; min-width: 260px; }
-  .sim-panel .title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-  .sim-panel .sub { font-size: 12px; color: var(--text-mute); margin-top: 8px; }
+  .sim { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px; margin: 6px 0; }
+  .sim-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sim-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px; flex: 1; min-width: 260px; }
+  .sim-panel .title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .sim-panel .sub { font-size: 12px; color: var(--text-mute); margin-top: 4px; }
   .sim canvas { display: block; width: 100%; height: auto; background: #000; border-radius: 6px; image-rendering: pixelated; }
   .sr-labels { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--text-mute); margin-top: 6px; }
   .sig-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
-  .sig-block { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; flex: 1; min-width: 240px; }
-  .sig-label { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
-  .bits { display: flex; gap: 8px; }
-  .bit { width: 46px; height: 46px; border-radius: 7px; border: 1px solid var(--border);
+  .sig-block { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; flex: 1; min-width: 240px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .sig-label { font-size: 12px; color: var(--text-dim); margin: 0; }
+  .bits { display: flex; gap: 6px; }
+  .bit { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 14px; color: var(--text-dim); background: var(--well-bg);
+    font-family: var(--mono); font-size: 12px; color: var(--text-dim); background: var(--well-bg);
     cursor: pointer; transition: all .12s; user-select: none; }
-  .bit small { font-size: 8px; opacity: .7; }
+  .bit small { display: none; }
   .bit.active { background: var(--accent); color: #04101f; border-color: var(--accent); font-weight: 700; }
-  .addr-out { margin-top: 10px; font-family: var(--mono); font-size: 12.5px; }
+  .addr-out { margin: 0; font-family: var(--mono); font-size: 12.5px; }
   .dots { display: flex; gap: 12px; }
   .dot { width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--border);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -237,11 +237,11 @@
   .dot.clk { background: var(--accent); color: #04101f; }
   .dot.lat { background: var(--danger); color: #1c0608; }
   .dot.oe  { background: var(--ok); color: #04180d; }
-  .cap { min-height: 40px; font-size: 13.5px; color: var(--text-dim); margin-top: 14px; padding: 10px 12px;
+  .cap { min-height: 24px; font-size: 12px; color: var(--text-dim); margin-top: 4px; padding: 4px 8px;
     background: var(--well-bg); border-radius: 8px; border: 1px solid var(--border); }
-  .ctrls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .ctrls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
   .btn { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 15px; font-size: 13px; color: var(--text); cursor: pointer; font-family: var(--sans); }
+    padding: 4px 10px; font-size: 12px; color: var(--text); cursor: pointer; font-family: var(--sans); }
   .btn:hover { border-color: var(--accent); }
   .btn:active { transform: scale(.97); }
   .slabel { font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; margin-left: auto; }
@@ -517,18 +517,28 @@
 </div>
 
 <div class="sim" id="sim">
-  <div class="sim-panel">
-    <div class="title">Shift register — one column loads per CLK pulse</div>
-    <canvas id="sr" width="384" height="34"></canvas>
-    <div class="sr-labels">
+  <!-- Controls at the top -->
+  <div class="ctrls" style="margin-bottom: 4px; padding: 6px 12px; background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); justify-content: center;">
+    <button class="btn" id="stepBack">&#9664; Step</button>
+    <button class="btn" id="play">Pause</button>
+    <button class="btn" id="step">Step &#9654;</button>
+    <button class="btn" id="reset">Reset</button>
+    <label class="slabel" style="margin-left: 16px;">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
+  </div>
+  <div class="hint" style="margin-bottom: 8px; text-align: center;">Drag speed far left then use <strong>&#9664; Step</strong> / <strong>Step &#9654;</strong> one clock at a time — watch the waveform build left-to-right and LAT/OE fire at the row boundary.</div>
+
+  <div class="sim-panel" style="padding:4px 6px;">
+    <div class="title" style="margin-bottom:2px;">Shift register — one column loads per CLK pulse</div>
+    <canvas id="sr" width="384" height="34" style="max-height:20px; width:auto; display:block; margin:0 auto;"></canvas>
+    <div class="sr-labels" style="margin-top:2px; font-size:10px; justify-content:center;">
       <span>Top row &rarr; R1/G1/B1 &nbsp;(GPIO 42/41/40)</span>
       <span>Bottom row &rarr; R2/G2/B2 &nbsp;(GPIO 38/39/37)</span>
     </div>
   </div>
 
   <!-- Address bits (compact strip, still clickable) -->
-  <div class="sig-block" style="margin-top:16px;">
-    <div class="sig-label">Address bits — click any bit to jump to that row-pair</div>
+  <div class="sig-block" style="margin-top:4px;">
+    <div class="sig-label">Address bits &mdash; click bit to jump</div>
     <div class="bits" id="bits">
       <div class="bit" data-bit="0"><span>A</span><small>GPIO45</small></div>
       <div class="bit" data-bit="1"><span>B</span><small>GPIO36</small></div>
@@ -539,31 +549,24 @@
   </div>
 
   <!-- Digital waveform -->
-  <div class="sim-panel" style="margin-top:12px; padding:12px 14px;">
-    <div class="title">Signal waveform <span style="font-weight:400;color:var(--text-mute);font-size:11px;">&mdash; last 80 steps &mdash; CLK &middot; A B C D &middot; LAT &middot; OE &middot; R1 G1 B1 &middot; R2 G2 B2</span></div>
-    <canvas id="wc" width="800" height="286" style="width:100%;height:auto;display:block;border-radius:6px;margin-top:8px;"></canvas>
+  <div class="sim-panel" style="margin-top:4px; padding:6px;">
+    <div class="title" style="margin-bottom:2px;">Signal waveform <span style="font-weight:400;color:var(--text-mute);font-size:11px;">&mdash; CLK &middot; A B C D &middot; LAT &middot; OE &middot; R1 G1 B1 &middot; R2 G2 B2</span></div>
+    <canvas id="wc" width="800" height="182" style="width:100%;height:auto;display:block;border-radius:6px;margin-top:0;"></canvas>
   </div>
 
   <div class="cap" id="cap"></div>
 
-  <div class="ctrls" style="margin-bottom: 24px;">
-    <button class="btn" id="stepBack">&#9664; Step</button>
-    <button class="btn" id="play">Pause</button>
-    <button class="btn" id="step">Step &#9654;</button>
-    <button class="btn" id="reset">Reset</button>
-    <label class="slabel">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
-  </div>
-  <div class="hint" style="margin-bottom: 24px;">Drag speed far left then use <strong>&#9664; Step</strong> / <strong>Step &#9654;</strong> one clock at a time — watch the waveform build left-to-right and LAT/OE fire at the row boundary.</div>
+
 
   <div class="sim-row">
     <div class="sim-panel">
       <div class="title">What your eyes perceive</div>
-      <canvas id="p1" width="384" height="192"></canvas>
+      <canvas id="p1" width="384" height="192" style="max-height:150px; width:auto; display:block; margin:0 auto;"></canvas>
       <div class="sub">Full image — persistence of vision blends every flash together.</div>
     </div>
     <div class="sim-panel">
       <div class="title">What is electrically active right now</div>
-      <canvas id="p2" width="384" height="192"></canvas>
+      <canvas id="p2" width="384" height="192" style="max-height:150px; width:auto; display:block; margin:0 auto;"></canvas>
       <div class="sub">Only the addressed row-pair is lit; a white box marks the column being clocked in.</div>
     </div>
   </div>
@@ -574,16 +577,17 @@
 <div class="card">
   <h3 style="margin-top:0;">Hardware</h3>
   <ul>
-    <li><strong>Adafruit MatrixPortal S3</strong> (the ESP32-S3 controller with the HUB75 connector on the back).</li>
-    <li><strong>64&times;32 HUB75 RGB LED matrix panel</strong> (any pixel pitch — P3, P4, P5&hellip; the pitch only changes physical size, not the code).</li>
+    <li><strong>Adafruit MatrixPortal S3</strong> (the ESP32-S3 controller with the HUB75 connector on the back).<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/914/medium800/adafruit_io_mxprtl-3876.jpg" alt="MatrixPortal S3" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
+    <li><strong>64&times;32 HUB75 RGB LED matrix panel</strong> (any pixel pitch — P3, P4, P5&hellip; the pitch only changes physical size, not the code).<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/912/medium640/adafruit_io_mxprtl-3874.jpg" alt="RGB LED Matrix" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
     <li><strong>5&nbsp;V power supply rated at least 4&nbsp;A</strong> for a single 64&times;32 panel. A 5&nbsp;V&nbsp;/&nbsp;4&nbsp;A "wall wart" is the recommended baseline; more headroom (5&nbsp;A) is fine.</li>
-    <li><strong>Power leads</strong> — the panel usually ships with a power cable (red/black with a 4-pin plug on one end and spade/fork terminals on the other) that goes to the board's screw terminals.</li>
+    <li><strong>Power leads</strong> — the panel usually ships with a power cable (red/black with a 4-pin plug on one end and spade/fork terminals on the other) that goes to the board's screw terminals.<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/910/medium640/adafruit_io_mxprtl-3872.jpg" alt="Power cable" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
     <li><strong>HUB75 ribbon cable</strong> — usually included with the panel; or plug the board directly onto the panel's rear connector.</li>
     <li><strong>USB-C cable</strong> (data-capable, not charge-only) to program the board.</li>
   </ul>
   <h3>Tools</h3>
   <ul>
-    <li>Small flat screwdriver for the power screw terminals.</li>
+    <li><strong>Small flat screwdriver</strong> for the power screw terminals.<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/907/medium640/adafruit_io_mxprtl-3869.jpg" alt="Screwdriver on power terminals" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
+    <li><strong>Diagonal Cutters</strong> (Optional: Needed if there's a plastic nub on the matrix that prevents the MatrixPortal from plugging in firmly).<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/915/medium800/adafruit_io_mxprtl-3877.jpg" alt="Cutting plastic nub" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
     <li>A computer running the Arduino IDE.</li>
     <li>(Optional) multimeter to confirm your supply reads ~5&nbsp;V and to check polarity before connecting.</li>
   </ul>
@@ -591,13 +595,32 @@
 
 <!-- ============ SOFTWARE ============ -->
 <h2 id="software"><span class="n">07</span>Software setup</h2>
+<div class="callout warn">
+  <strong>Warning:</strong> The ESP32-S2/S3 bootloader does not have USB serial support for Windows 7 or 8. (See <a href="https://github.com/espressif/arduino-esp32/issues/5994" class="link">this issue</a>) Please update to version 10 which is supported by Espressif! Alternatively, you can try this <a href="https://github.com/kutukvpavel/Esp32-Win7-VCP-drivers" class="link">community-crafted Windows 7 driver</a>.
+</div>
 <ol>
   <li>Install the <strong>Arduino IDE 2.x</strong>.</li>
-  <li>Add ESP32 board support: <em>File &rarr; Preferences</em>, add the Espressif board-manager URL, then in <em>Boards Manager</em> install <strong>"esp32" by Espressif Systems</strong>.</li>
-  <li>Select the board: <em>Tools &rarr; Board</em> &rarr; the <strong>Adafruit MatrixPortal S3 / Adafruit Feather ESP32-S3</strong> entry.</li>
-  <li>Install libraries via <em>Library Manager</em>: <strong>Adafruit Protomatter</strong> (pulls in <strong>Adafruit GFX</strong> and <strong>Adafruit BusIO</strong> as dependencies — accept them).</li>
+  <li>Add ESP32 board support: <em>File &rarr; Preferences</em>, add the Espressif board-manager URL (<code>https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</code>).
+    <br><img src="assets/ArduinoIDEPreferences.png" alt="Arduino IDE Preferences" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+    Then open <em>Boards Manager</em> and install <strong>"esp32" by Espressif Systems</strong>.
+    <br><img src="assets/IDEBoardManages.png" alt="Boards Manager ESP32" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+  </li>
+  <li>Select the board: Go to <em>Tools &rarr; Board &rarr; ESP32 Arduino</em> and select the <strong>Adafruit MatrixPortal ESP32-S3</strong> (or Adafruit Feather ESP32-S3) entry. (If you don't see the <em>ESP32 Arduino</em> sub-menu, the board support package from step 2 isn't fully installed yet).
+    <br><img src="assets/MatrixBoardSelection.png" alt="MatrixPortal Board Selection" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+  </li>
+  <li>Install libraries via <em>Library Manager</em>: <strong>Adafruit Protomatter</strong> (pulls in <strong>Adafruit GFX</strong> and <strong>Adafruit BusIO</strong> as dependencies — accept them).
+    <br><img src="assets/AdafruitProtomatter.png" alt="Library Manager Protomatter" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+  </li>
   <li>Enable <strong>USB CDC On Boot</strong> under Tools if you want Serial Monitor output over USB.</li>
+  <li><strong>Select the Port:</strong> Go to <em>Tools &rarr; Port</em> and select the COM port labeled with the board name.
+    <br><img src="assets/PortSelection.png" alt="Port Selection" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+  </li>
 </ol>
+
+<div class="callout tip">
+  <strong>Pro Tip: Safe Initial Testing</strong><br>
+  It is highly recommended to write your code, program the MatrixPortal via USB, and verify it with the Serial Monitor <em>before</em> you physically connect the board to the LED panel or the heavy 5V power supply. Doing this isolated testing eliminates the risk of accidentally shorting the high-current supply or reversing polarity while you are distracted by software compilation. Once your code uploads successfully, power everything down and proceed to the wiring steps.
+</div>
 
 <!-- ============ WIRING ============ -->
 <h2 id="wiring"><span class="n">08</span>Wiring &amp; power</h2>
@@ -648,13 +671,21 @@ void setup() {
                               // this before drawing each new frame so old
                               // pixels don't persist.
 
-  matrix.setTextColor(        // Pick the text color. color565() converts
-    matrix.color565(0, 255, 0)// R, G, B (0-255 each) to the 16-bit color565
-  );                          // format the library uses internally.
+  // Write 'T' in Red
+  matrix.setTextColor(matrix.color565(255, 0, 0));
+  matrix.setCursor(2, 12);    // Move the text pen to column 2, row 12 (pixels)
+  matrix.print("T");
 
-  matrix.setCursor(2, 12);    // Move the text pen to column 2, row 12 (pixels).
-                              // (0,0) is the top-left corner.
-  matrix.print("Hello!");     // Draw the string into the frame buffer.
+  // Write 'P' in Green
+  matrix.setTextColor(matrix.color565(0, 255, 0));
+  matrix.setCursor(10, 12);   // Move cursor to the right for the next letter
+  matrix.print("P");
+
+  // Write 'S' in Blue
+  matrix.setTextColor(matrix.color565(0, 0, 255));
+  matrix.setCursor(18, 12);   // Move cursor to the right again
+  matrix.print("S");
+
   matrix.show();              // Push the frame buffer to the panel hardware.
                               // Nothing appears on the physical LEDs until
                               // this is called.
@@ -712,6 +743,17 @@ void loop() { }
     <tr><td>OE</td><td>14</td><td><code>oePin</code></td></tr>
   </tbody>
 </table>
+
+<h3>Uploading to the Board &amp; Factory Backup</h3>
+<p>To upload your code, simply click the <strong>Upload</strong> button (the right-pointing arrow) in the top-left corner of the Arduino IDE. The IDE will compile the sketch and transfer it over USB to the ESP32-S3.</p>
+<div class="callout warn">
+  <strong>What about the default factory program?</strong><br>
+  The MatrixPortal S3 ships from the factory pre-loaded with CircuitPython and a default LED demo script. <strong>Uploading any Arduino sketch will overwrite this CircuitPython environment.</strong> 
+  <ul style="margin-top: 8px;">
+    <li><strong>To backup your scripts:</strong> Before uploading from Arduino, you can plug in the board and simply copy all the files and folders off the <code>CIRCUITPY</code> USB drive to a safe folder on your computer.</li>
+    <li><strong>To completely restore the factory state:</strong> If you ever want to go back to CircuitPython later, you can easily perform a <a href="https://learn.adafruit.com/adafruit-matrixportal-s3/factory-reset" class="link" target="_blank">Factory Reset</a>. Just double-click the physical Reset button on the board so the <code>MATRXS3BOOT</code> drive appears, and drag-and-drop the Adafruit Factory Reset <code>.uf2</code> file onto it. Your board will be exactly as it was when you bought it!</li>
+  </ul>
+</div>
 
 <!-- ============ TEXT ============ -->
 <h2 id="text"><span class="n">10</span>Writing text on the matrix</h2>
@@ -946,7 +988,7 @@ void loop() {
   }
 
   // ── Draw waveform ─────────────────────────────────────────────────────────
-  var LW=38, ROW_H=22, PAD=3;
+  var LW=38, ROW_H=14, PAD=2;
   function drawWaveform(){
     var W=wc.width, H=wc.height;
     var SW=W-LW;                         // signal area width
@@ -1113,7 +1155,7 @@ void loop() {
   var THEME_KEY='hub75_theme', FS_KEY='hub75_fs';
   var MIN=12, MAX=26, STEP=1;
   var fs=parseInt(localStorage.getItem(FS_KEY),10); if(isNaN(fs)) fs=16;
-  var theme=localStorage.getItem(THEME_KEY)||'dark';
+  var theme=localStorage.getItem(THEME_KEY)||'light';
 
   var themeBtn=document.getElementById('themeBtn');
   var ico=themeBtn.querySelector('.ico'), lbl=themeBtn.querySelector('.lbl');

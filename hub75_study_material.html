@@ -1,652 +1,1613 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HUB75 RGB Matrix + MatrixPortal S3 — Interactive Study Guide</title>
-<style>
-  :root {
-    --bg: #0e1116;
-    --surface: #161b22;
-    --surface-2: #1c232d;
-    --border: #2a323d;
-    --text: #e6edf3;
-    --text-dim: #9aa7b4;
-    --text-mute: #6b7683;
-    --accent: #4c9aff;
-    --accent-soft: #16324f;
-    --danger: #ff5c5c;
-    --danger-soft: #3a1618;
-    --warn: #ffb638;
-    --warn-soft: #3a2c10;
-    --ok: #48c774;
-    --ok-soft: #10331f;
-    --code-fg: #ffd6a5;
-    --well-bg: #0a0d12;
-    --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --fs: 16px;
-  }
-  html[data-theme="light"] {
-    --bg: #f6f8fa;
-    --surface: #ffffff;
-    --surface-2: #eef1f5;
-    --border: #d6dce2;
-    --text: #1f2328;
-    --text-dim: #57606a;
-    --text-mute: #8b949e;
-    --accent: #0969da;
-    --accent-soft: #ddf1ff;
-    --danger: #cf222e;
-    --danger-soft: #ffe6e6;
-    --warn: #9a6700;
-    --warn-soft: #fff5d6;
-    --ok: #1a7f37;
-    --ok-soft: #e3f7ea;
-    --code-fg: #ad5700;
-    --well-bg: #e9edf2;
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: var(--sans); line-height: 1.7; font-size: var(--fs);
-    transition: background .2s, color .2s;
-  }
-  /* ── App bar ─────────────────────────────────────────────────────── */
-  .appbar { position: sticky; top: 0; z-index: 200;
-    background: var(--surface); border-bottom: 1px solid var(--border); }
-  .appbar-inner { padding: 10px 20px 10px 16px;
-    display: flex; align-items: center; gap: 12px; }
-  .appbar-title { font-size: 15px; font-weight: 600; color: var(--text);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .appbar-controls { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-  .fontctl { display: flex; align-items: center; gap: 2px;
-    background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 3px; }
-  .fontctl button { width: 28px; height: 28px; border: none; border-radius: 6px;
-    background: transparent; color: var(--text); font-size: 18px; cursor: pointer;
-    line-height: 1; display: flex; align-items: center; justify-content: center; }
-  .fontctl button:hover { background: var(--surface); }
-  .fontctl button:active { transform: scale(.92); }
-  .fontctl .fsval { min-width: 44px; text-align: center; font-family: var(--mono);
-    font-size: 12.5px; color: var(--text-dim); }
-  .theme-toggle { display: flex; align-items: center; gap: 6px;
-    background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
-    padding: 6px 12px; font-size: 13px; color: var(--text); cursor: pointer;
-    font-family: var(--sans); white-space: nowrap; }
-  .theme-toggle:hover { border-color: var(--accent); }
-  .theme-toggle:active { transform: scale(.97); }
-
-  /* ── Hamburger (mobile only) ─────────────────────────────────────── */
-  .hamburger { display: none; width: 34px; height: 34px;
-    border: 1px solid var(--border); border-radius: 8px;
-    background: var(--surface-2); color: var(--text); font-size: 20px;
-    cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; }
-
-  /* ── Page layout (sidebar + main) ────────────────────────────────── */
-  .page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 49px); }
-
-  /* ── Left sidebar ────────────────────────────────────────────────── */
-  .sidebar {
-    position: sticky; top: 49px;
-    width: 236px; min-width: 236px;
-    height: calc(100vh - 49px); overflow-y: auto; overflow-x: hidden;
-    background: var(--surface); border-right: 1px solid var(--border);
-    padding: 18px 0 40px; flex-shrink: 0;
-    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
-    transition: transform .25s ease;
-  }
-  .sidebar::-webkit-scrollbar { width: 4px; }
-  .sidebar::-webkit-scrollbar-track { background: transparent; }
-  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  .sidebar-logo { padding: 0 16px 14px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-  .sidebar-logo .sb-tag { font-size: 10px; font-family: var(--mono); color: var(--text-mute);
-    text-transform: uppercase; letter-spacing: .09em; }
-  .sidebar-logo strong { display: block; font-size: 12.5px; color: var(--accent); margin-top: 3px; line-height: 1.4; }
-
-  .sidebar-section { padding: 10px 16px 3px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .1em; color: var(--text-mute); }
-
-  .sidebar nav a {
-    display: flex; align-items: center; gap: 9px;
-    padding: 6px 16px 6px 14px; font-size: 12.5px; color: var(--text-dim);
-    text-decoration: none; border-left: 3px solid transparent;
-    transition: all .1s; line-height: 1.35;
-  }
-  .sidebar nav a .nav-num {
-    font-family: var(--mono); font-size: 10px; color: var(--text-mute); min-width: 20px; flex-shrink: 0;
-  }
-  .sidebar nav a:hover { color: var(--text); background: var(--surface-2); border-left-color: var(--border); }
-  .sidebar nav a.active { color: var(--accent); background: var(--accent-soft);
-    border-left-color: var(--accent); font-weight: 600; }
-  .sidebar nav a.active .nav-num { color: var(--accent); }
-
-  /* Dark overlay when sidebar slides in on mobile */
-  .sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 149;
-    background: rgba(0,0,0,.5); backdrop-filter: blur(2px); }
-  .sidebar-overlay.open { display: block; }
-
-  /* ── Main content ────────────────────────────────────────────────── */
-  .wrap { flex: 1; min-width: 0; max-width: 100%; margin: 0; padding: 32px 36px 80px; }
-
-  /* Hide inline TOC card on wide screens (sidebar replaces it) */
-  @media (min-width: 860px) { nav.toc { display: none; } }
-
-  /* ── Responsive ──────────────────────────────────────────────────── */
-  @media (max-width: 859px) {
-    .hamburger { display: flex; }
-    .sidebar {
-      position: fixed; top: 0; left: 0; z-index: 150;
-      height: 100vh; transform: translateX(-100%);
-      box-shadow: 6px 0 32px rgba(0,0,0,.5);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HUB75 RGB Matrix + MatrixPortal S3 — Interactive Study Guide</title>
+  <style>
+    :root {
+      --bg: #0e1116;
+      --surface: #161b22;
+      --surface-2: #1c232d;
+      --border: #2a323d;
+      --text: #e6edf3;
+      --text-dim: #9aa7b4;
+      --text-mute: #6b7683;
+      --accent: #4c9aff;
+      --accent-soft: #16324f;
+      --danger: #ff5c5c;
+      --danger-soft: #3a1618;
+      --warn: #ffb638;
+      --warn-soft: #3a2c10;
+      --ok: #48c774;
+      --ok-soft: #10331f;
+      --code-fg: #ffd6a5;
+      --well-bg: #0a0d12;
+      --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --fs: 16px;
     }
-    .sidebar.open { transform: translateX(0); }
-    .page-layout { display: block; }
-    .wrap { padding: 24px 16px 60px; }
-  }
-  @media (max-width: 560px) {
-    .appbar-title { font-size: 13px; }
-    .theme-toggle span.lbl { display: none; }
-  }
 
-  header.hero {
-    border: 1px solid var(--border); border-radius: 16px;
-    background: linear-gradient(160deg, #14202e, #0e1116);
-    padding: 32px 28px; margin-bottom: 28px;
-  }
-  header.hero h1 { margin: 0 0 8px; font-size: calc(var(--fs) * 1.69); font-weight: 600; color: #eef2f7; }
-  header.hero p { margin: 0; color: #aab4c0; }
-  html[data-theme="light"] header.hero {
-    background: linear-gradient(160deg, #eef4fb, #e4ecf5);
-  }
-  html[data-theme="light"] header.hero h1 { color: var(--text); }
-  html[data-theme="light"] header.hero p { color: var(--text-dim); }
-  .badges { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .badge { font-size: 12px; font-family: var(--mono); padding: 4px 10px; border-radius: 20px;
-    background: var(--accent-soft); color: var(--accent); border: 1px solid #234b73; }
+    html[data-theme="light"] {
+      --bg: #f6f8fa;
+      --surface: #ffffff;
+      --surface-2: #eef1f5;
+      --border: #d6dce2;
+      --text: #1f2328;
+      --text-dim: #57606a;
+      --text-mute: #8b949e;
+      --accent: #0969da;
+      --accent-soft: #ddf1ff;
+      --danger: #cf222e;
+      --danger-soft: #ffe6e6;
+      --warn: #9a6700;
+      --warn-soft: #fff5d6;
+      --ok: #1a7f37;
+      --ok-soft: #e3f7ea;
+      --code-fg: #ad5700;
+      --well-bg: #e9edf2;
+    }
 
-  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 20px; margin-bottom: 32px; }
-  nav.toc strong { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-mute); }
-  nav.toc ol { margin: 10px 0 0; padding-left: 20px; columns: 2; }
-  nav.toc a { color: var(--text); text-decoration: none; }
-  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+    * {
+      box-sizing: border-box;
+    }
 
-  h2 { font-size: calc(var(--fs) * 1.31); font-weight: 600; margin: 44px 0 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-  h2 .n { color: var(--accent); font-family: var(--mono); font-size: 16px; margin-right: 8px; }
-  h3 { font-size: calc(var(--fs) * 1.06); font-weight: 600; margin: 26px 0 10px; }
-  p { margin: 12px 0; }
-  ul, ol { margin: 12px 0; padding-left: 24px; }
-  li { margin: 6px 0; }
-  code { font-family: var(--mono); font-size: calc(var(--fs) * 0.875); background: var(--surface-2);
-    padding: 2px 6px; border-radius: 5px; color: var(--code-fg); }
-  pre { background: #0a0d12; border: 1px solid var(--border); border-radius: 10px;
-    padding: 16px 18px; overflow-x: auto; margin: 16px 0; }
-  pre code { background: none; padding: 0; color: #d7e2ee; font-size: calc(var(--fs) * 0.84); line-height: 1.6; }
+    html {
+      scroll-behavior: smooth;
+    }
 
-  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: calc(var(--fs) * 0.9); }
-  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
-  th { color: var(--text-mute); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
-  td code { font-size: 13px; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.7;
+      font-size: var(--fs);
+      transition: background .2s, color .2s;
+    }
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
+    /* ── App bar ─────────────────────────────────────────────────────── */
+    .appbar {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
 
-  .callout { border-radius: 12px; padding: 16px 18px 16px 46px; margin: 18px 0; position: relative; border: 1px solid; }
-  .callout::before { position: absolute; left: 16px; top: 15px; font-size: 18px; }
-  .callout.danger { background: var(--danger-soft); border-color: #5a2226; }
-  .callout.danger::before { content: "⛔"; }
-  .callout.warn { background: var(--warn-soft); border-color: #5a4416; }
-  .callout.warn::before { content: "⚠️"; }
-  .callout.tip { background: var(--ok-soft); border-color: #1d4d30; }
-  .callout.tip::before { content: "✅"; }
-  .callout.info { background: var(--accent-soft); border-color: #234b73; }
-  .callout.info::before { content: "💡"; }
-  .callout strong { color: var(--text); }
+    .appbar-inner {
+      padding: 10px 20px 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-  .danger-banner { background: var(--danger-soft); border: 1px solid #7a2c30; border-left: 5px solid var(--danger);
-    border-radius: 10px; padding: 18px 22px; margin: 20px 0; }
-  .danger-banner h3 { margin-top: 0; color: var(--danger); }
+    .appbar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-  /* ---- interactive sim ---- */
-  .sim { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px; margin: 6px 0; }
-  .sim-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .sim-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px; flex: 1; min-width: 200px; }
-  .sim-panel .title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
-  .sim-panel .sub { font-size: 11px; color: var(--text-mute); margin-top: 2px; }
-  .sim canvas { display: block; width: 100%; height: auto; background: #000; border-radius: 6px; image-rendering: pixelated; }
-  .sr-labels { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 10px; color: var(--text-mute); margin-top: 2px; }
-  .sig-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
-  .sig-block { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; flex: 1; min-width: 200px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .sig-label { font-size: 11px; color: var(--text-dim); margin: 0; }
-  .bits { display: flex; gap: 4px; }
-  .bit { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 11px; color: var(--text-dim); background: var(--well-bg);
-    cursor: pointer; transition: all .12s; user-select: none; }
-  .bit small { display: none; }
-  .bit.active { background: var(--accent); color: #04101f; border-color: var(--accent); font-weight: 700; }
-  .addr-out { margin: 0; font-family: var(--mono); font-size: 11px; }
-  .dots { display: flex; gap: 12px; }
-  .dot { width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--border);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 11px; color: var(--text-dim); background: var(--well-bg); transition: all .1s; }
-  .dot small { font-size: 8px; color: var(--text-mute); }
-  .dot.clk { background: var(--accent); color: #04101f; }
-  .dot.lat { background: var(--danger); color: #1c0608; }
-  .dot.oe  { background: var(--ok); color: #04180d; }
-  .cap { min-height: 20px; font-size: 11px; color: var(--text-dim); margin-top: 4px; padding: 4px 8px;
-    background: var(--well-bg); border-radius: 8px; border: 1px solid var(--border); }
-  .ctrls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-  .btn { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
-    padding: 3px 8px; font-size: 11px; color: var(--text); cursor: pointer; font-family: var(--sans); }
-  .btn:hover { border-color: var(--accent); }
-  .btn:active { transform: scale(.97); }
-  .slabel { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; margin-left: auto; }
-  input[type=range] { accent-color: var(--accent); width: 80px; }
-  .hint { font-size: 11px; color: var(--text-mute); margin-top: 4px; font-style: italic; }
+    .appbar-controls {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-  /* ---- RGB live pin readout ---- */
-  .rgb-pins { display: flex; flex-direction: column; gap: 8px; }
-  .rgb-pins-row { display: flex; gap: 6px; align-items: center; }
-  .rgb-pins-label { font-size: 11px; color: var(--text-mute); width: 34px; font-family: var(--mono); }
-  .pin-cell { width: 42px; height: 42px; border-radius: 7px; border: 2px solid transparent;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 15px; font-weight: 700; background: var(--well-bg);
-    transition: all .08s; user-select: none; }
-  .pin-cell small { font-size: 8px; font-weight: 400; opacity: .7; margin-top: 1px; }
-  .pin-cell.ch-r { border-color: #ff3b30; }
-  .pin-cell.ch-g { border-color: #2ecc71; }
-  .pin-cell.ch-b { border-color: #3b82f6; }
-  .pin-cell.on-r { background: #ff3b30; color: #fff; }
-  .pin-cell.on-g { background: #2ecc71; color: #04180d; }
-  .pin-cell.on-b { background: #3b82f6; color: #fff; }
-  .pin-cell.idle { color: var(--text-mute); border-color: var(--border); }
+    .fontctl {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
 
-  .connector-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
-  .conn-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
-  .conn-grid { display: flex; flex-direction: column; gap: 6px; }
-  .conn-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
-  .pin { border-radius: 8px; padding: 8px 4px; text-align: center; font-family: var(--mono);
-    border: 1px solid var(--border); background: var(--surface-2); border-top-width: 3px; }
-  .pin .sig { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
-  .pin small { display: block; font-size: 9px; color: var(--text-mute); margin-top: 2px; }
-  .pin.rgb { border-top-color: var(--accent); }
-  .pin.addr { border-top-color: var(--ok); }
-  .pin.ctrl { border-top-color: var(--warn); }
-  .pin.gnd { border-top-color: var(--text-mute); }
-  .pin.gnd .sig { color: var(--text-mute); }
-  .conn-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--text-dim); align-items: center; }
-  .conn-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
-  .sw.rgb { background: var(--accent); }
-  .sw.addr { background: var(--ok); }
-  .sw.ctrl { background: var(--warn); }
-  .sw.gnd { background: var(--text-mute); }
-  @media (max-width: 620px) {
-    .conn-row { grid-template-columns: repeat(4, 1fr); }
-  }
+    .fontctl button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border);
-    color: var(--text-mute); font-size: 13px; }
-  a.link { color: var(--accent); }
+    .fontctl button:hover {
+      background: var(--surface);
+    }
 
-  /* Prism.js Overrides for our dark background */
-  pre[class*="language-"] { background: #0a0d12 !important; border: 1px solid var(--border) !important; border-radius: 10px !important; margin: 16px 0 !important; }
-  code[class*="language-"], pre[class*="language-"] { color: #d7e2ee !important; font-size: calc(var(--fs) * 0.84) !important; line-height: 1.6 !important; text-shadow: none !important; font-family: var(--mono) !important; }
-</style>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    .fontctl button:active {
+      transform: scale(.92);
+    }
+
+    .fontctl .fsval {
+      min-width: 44px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--text-dim);
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--sans);
+      white-space: nowrap;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--accent);
+    }
+
+    .theme-toggle:active {
+      transform: scale(.97);
+    }
+
+    /* ── Hamburger (mobile only) ─────────────────────────────────────── */
+    .hamburger {
+      display: none;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Page layout (sidebar + main) ────────────────────────────────── */
+    .page-layout {
+      display: flex;
+      align-items: flex-start;
+      min-height: calc(100vh - 49px);
+    }
+
+    /* ── Left sidebar ────────────────────────────────────────────────── */
+    .sidebar {
+      position: sticky;
+      top: 49px;
+      width: 236px;
+      min-width: 236px;
+      height: calc(100vh - 49px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 18px 0 40px;
+      flex-shrink: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      transition: transform .25s ease;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .sidebar-logo {
+      padding: 0 16px 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .sidebar-logo .sb-tag {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text-mute);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+    }
+
+    .sidebar-logo strong {
+      display: block;
+      font-size: 12.5px;
+      color: var(--accent);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .sidebar-section {
+      padding: 10px 16px 3px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-mute);
+    }
+
+    .sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 16px 6px 14px;
+      font-size: 12.5px;
+      color: var(--text-dim);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all .1s;
+      line-height: 1.35;
+    }
+
+    .sidebar nav a .nav-num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-mute);
+      min-width: 20px;
+      flex-shrink: 0;
+    }
+
+    .sidebar nav a:hover {
+      color: var(--text);
+      background: var(--surface-2);
+      border-left-color: var(--border);
+    }
+
+    .sidebar nav a.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .sidebar nav a.active .nav-num {
+      color: var(--accent);
+    }
+
+    /* Dark overlay when sidebar slides in on mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 149;
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(2px);
+    }
+
+    .sidebar-overlay.open {
+      display: block;
+    }
+
+    /* ── Main content ────────────────────────────────────────────────── */
+    .wrap {
+      flex: 1;
+      min-width: 0;
+      max-width: 100%;
+      margin: 0;
+      padding: 32px 36px 80px;
+    }
+
+    /* Hide inline TOC card on wide screens (sidebar replaces it) */
+    @media (min-width: 860px) {
+      nav.toc {
+        display: none;
+      }
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 859px) {
+      .hamburger {
+        display: flex;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 150;
+        height: 100vh;
+        transform: translateX(-100%);
+        box-shadow: 6px 0 32px rgba(0, 0, 0, .5);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .page-layout {
+        display: block;
+      }
+
+      .wrap {
+        padding: 24px 16px 60px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .appbar-title {
+        font-size: 13px;
+      }
+
+      .theme-toggle span.lbl {
+        display: none;
+      }
+    }
+
+    header.hero {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(160deg, #14202e, #0e1116);
+      padding: 32px 28px;
+      margin-bottom: 28px;
+    }
+
+    header.hero h1 {
+      margin: 0 0 8px;
+      font-size: calc(var(--fs) * 1.69);
+      font-weight: 600;
+      color: #eef2f7;
+    }
+
+    header.hero p {
+      margin: 0;
+      color: #aab4c0;
+    }
+
+    html[data-theme="light"] header.hero {
+      background: linear-gradient(160deg, #eef4fb, #e4ecf5);
+    }
+
+    html[data-theme="light"] header.hero h1 {
+      color: var(--text);
+    }
+
+    html[data-theme="light"] header.hero p {
+      color: var(--text-dim);
+    }
+
+    .badges {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 12px;
+      font-family: var(--mono);
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid #234b73;
+    }
+
+    nav.toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+    }
+
+    nav.toc strong {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-mute);
+    }
+
+    nav.toc ol {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      columns: 2;
+    }
+
+    nav.toc a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    nav.toc a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    h2 {
+      font-size: calc(var(--fs) * 1.31);
+      font-weight: 600;
+      margin: 44px 0 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    h2 .n {
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 16px;
+      margin-right: 8px;
+    }
+
+    h3 {
+      font-size: calc(var(--fs) * 1.06);
+      font-weight: 600;
+      margin: 26px 0 10px;
+    }
+
+    p {
+      margin: 12px 0;
+    }
+
+    ul,
+    ol {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: calc(var(--fs) * 0.875);
+      background: var(--surface-2);
+      padding: 2px 6px;
+      border-radius: 5px;
+      color: var(--code-fg);
+    }
+
+    pre {
+      background: #0a0d12;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: #d7e2ee;
+      font-size: calc(var(--fs) * 0.84);
+      line-height: 1.6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: calc(var(--fs) * 0.9);
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--text-mute);
+      font-weight: 500;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    td code {
+      font-size: 13px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 18px 0;
+    }
+
+    .callout {
+      border-radius: 12px;
+      padding: 16px 18px 16px 46px;
+      margin: 18px 0;
+      position: relative;
+      border: 1px solid;
+    }
+
+    .callout::before {
+      position: absolute;
+      left: 16px;
+      top: 15px;
+      font-size: 18px;
+    }
+
+    .callout.danger {
+      background: var(--danger-soft);
+      border-color: #5a2226;
+    }
+
+    .callout.danger::before {
+      content: "⛔";
+    }
+
+    .callout.warn {
+      background: var(--warn-soft);
+      border-color: #5a4416;
+    }
+
+    .callout.warn::before {
+      content: "⚠️";
+    }
+
+    .callout.tip {
+      background: var(--ok-soft);
+      border-color: #1d4d30;
+    }
+
+    .callout.tip::before {
+      content: "✅";
+    }
+
+    .callout.info {
+      background: var(--accent-soft);
+      border-color: #234b73;
+    }
+
+    .callout.info::before {
+      content: "💡";
+    }
+
+    .callout strong {
+      color: var(--text);
+    }
+
+    .danger-banner {
+      background: var(--danger-soft);
+      border: 1px solid #7a2c30;
+      border-left: 5px solid var(--danger);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin: 20px 0;
+    }
+
+    .danger-banner h3 {
+      margin-top: 0;
+      color: var(--danger);
+    }
+
+    /* ---- interactive sim ---- */
+    .sim {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px;
+      margin: 6px 0;
+    }
+
+    .sim-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .sim-panel {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .sim-panel .title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .sim-panel .sub {
+      font-size: 11px;
+      color: var(--text-mute);
+      margin-top: 2px;
+    }
+
+    .sim canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #000;
+      border-radius: 6px;
+      image-rendering: pixelated;
+    }
+
+    .sr-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 10px;
+      color: var(--text-mute);
+      margin-top: 2px;
+    }
+
+    .sig-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .sig-block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px 12px;
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .sig-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin: 0;
+    }
+
+    .bits {
+      display: flex;
+      gap: 4px;
+    }
+
+    .bit {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--well-bg);
+      cursor: pointer;
+      transition: all .12s;
+      user-select: none;
+    }
+
+    .bit small {
+      display: none;
+    }
+
+    .bit.active {
+      background: var(--accent);
+      color: #04101f;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .addr-out {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .dots {
+      display: flex;
+      gap: 12px;
+    }
+
+    .dot {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--well-bg);
+      transition: all .1s;
+    }
+
+    .dot small {
+      font-size: 8px;
+      color: var(--text-mute);
+    }
+
+    .dot.clk {
+      background: var(--accent);
+      color: #04101f;
+    }
+
+    .dot.lat {
+      background: var(--danger);
+      color: #1c0608;
+    }
+
+    .dot.oe {
+      background: var(--ok);
+      color: #04180d;
+    }
+
+    .cap {
+      min-height: 20px;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      padding: 4px 8px;
+      background: var(--well-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .ctrls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--sans);
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+    }
+
+    .btn:active {
+      transform: scale(.97);
+    }
+
+    .slabel {
+      font-size: 11px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    input[type=range] {
+      accent-color: var(--accent);
+      width: 80px;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--text-mute);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* ---- RGB live pin readout ---- */
+    .rgb-pins {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rgb-pins-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .rgb-pins-label {
+      font-size: 11px;
+      color: var(--text-mute);
+      width: 34px;
+      font-family: var(--mono);
+    }
+
+    .pin-cell {
+      width: 42px;
+      height: 42px;
+      border-radius: 7px;
+      border: 2px solid transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--well-bg);
+      transition: all .08s;
+      user-select: none;
+    }
+
+    .pin-cell small {
+      font-size: 8px;
+      font-weight: 400;
+      opacity: .7;
+      margin-top: 1px;
+    }
+
+    .pin-cell.ch-r {
+      border-color: #ff3b30;
+    }
+
+    .pin-cell.ch-g {
+      border-color: #2ecc71;
+    }
+
+    .pin-cell.ch-b {
+      border-color: #3b82f6;
+    }
+
+    .pin-cell.on-r {
+      background: #ff3b30;
+      color: #fff;
+    }
+
+    .pin-cell.on-g {
+      background: #2ecc71;
+      color: #04180d;
+    }
+
+    .pin-cell.on-b {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .pin-cell.idle {
+      color: var(--text-mute);
+      border-color: var(--border);
+    }
+
+    .connector-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 18px 0;
+    }
+
+    .conn-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .conn-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .conn-row {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+
+    .pin {
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      font-family: var(--mono);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-top-width: 3px;
+    }
+
+    .pin .sig {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .pin small {
+      display: block;
+      font-size: 9px;
+      color: var(--text-mute);
+      margin-top: 2px;
+    }
+
+    .pin.rgb {
+      border-top-color: var(--accent);
+    }
+
+    .pin.addr {
+      border-top-color: var(--ok);
+    }
+
+    .pin.ctrl {
+      border-top-color: var(--warn);
+    }
+
+    .pin.gnd {
+      border-top-color: var(--text-mute);
+    }
+
+    .pin.gnd .sig {
+      color: var(--text-mute);
+    }
+
+    .conn-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-dim);
+      align-items: center;
+    }
+
+    .conn-legend .sw {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      margin-right: 6px;
+      vertical-align: -1px;
+    }
+
+    .sw.rgb {
+      background: var(--accent);
+    }
+
+    .sw.addr {
+      background: var(--ok);
+    }
+
+    .sw.ctrl {
+      background: var(--warn);
+    }
+
+    .sw.gnd {
+      background: var(--text-mute);
+    }
+
+    @media (max-width: 620px) {
+      .conn-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-mute);
+      font-size: 13px;
+    }
+
+    a.link {
+      color: var(--accent);
+    }
+
+    /* Prism.js Overrides for our dark background */
+    pre[class*="language-"] {
+      background: #0a0d12 !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 10px !important;
+      margin: 16px 0 !important;
+    }
+
+    code[class*="language-"],
+    pre[class*="language-"] {
+      color: #d7e2ee !important;
+      font-size: calc(var(--fs) * 0.84) !important;
+      line-height: 1.6 !important;
+      text-shadow: none !important;
+      font-family: var(--mono) !important;
+    }
+
+    /* ---- Copy Button ---- */
+    pre {
+      position: relative;
+    }
+
+    pre .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-size: 11px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--sans);
+      opacity: 0;
+    }
+
+    pre:hover .copy-btn {
+      opacity: 1;
+    }
+
+    pre .copy-btn:hover {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    pre .copy-btn.copied {
+      background: var(--ok-soft);
+      color: var(--ok);
+      border-color: var(--ok);
+    }
+  </style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
+
 <body>
 
-<div class="appbar">
-  <div class="appbar-inner">
-    <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
-    <div class="appbar-title">HUB75 RGB Matrix — Study Guide</div>
-    <div class="appbar-controls">
-      <div class="fontctl" role="group" aria-label="Font size">
-        <button id="fsMinus" title="Decrease font size" aria-label="Decrease font size">&minus;</button>
-        <span class="fsval" id="fsVal">16px</span>
-        <button id="fsPlus" title="Increase font size" aria-label="Increase font size">+</button>
+  <div class="appbar">
+    <div class="appbar-inner">
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
+      <div class="appbar-title">HUB75 RGB Matrix — Study Guide</div>
+      <div class="appbar-controls">
+        <div class="fontctl" role="group" aria-label="Font size">
+          <button id="fsMinus" title="Decrease font size" aria-label="Decrease font size">&minus;</button>
+          <span class="fsval" id="fsVal">16px</span>
+          <button id="fsPlus" title="Increase font size" aria-label="Increase font size">+</button>
+        </div>
+        <button class="theme-toggle" id="themeBtn" title="Toggle dark/light mode">
+          <span class="ico">🌙</span><span class="lbl">Dark</span>
+        </button>
       </div>
-      <button class="theme-toggle" id="themeBtn" title="Toggle dark/light mode">
-        <span class="ico">🌙</span><span class="lbl">Dark</span>
-      </button>
     </div>
   </div>
-</div>
 
-<div class="page-layout">
+  <div class="page-layout">
 
-  <!-- Sidebar Overlay for Mobile -->
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- Left Sidebar Navigation -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <span class="sb-tag">Study Guide</span>
-      <strong>HUB75 LED Matrix</strong>
-    </div>
-    
-    <div class="sidebar-section">Hardware & Theory</div>
-    <nav>
-      <a href="#safety"><span class="nav-num">01</span> Safety first</a>
-      <a href="#inside"><span class="nav-num">02</span> What's inside</a>
-      <a href="#pins"><span class="nav-num">03</span> The HUB75 pins</a>
-      <a href="#fewpins"><span class="nav-num">04</span> Multiplexing</a>
-      <a href="#sim"><span class="nav-num">05</span> Interactive animation</a>
-    </nav>
-    
-    <div class="sidebar-section">Project Setup</div>
-    <nav>
-      <a href="#materials"><span class="nav-num">06</span> Materials & tools</a>
-      <a href="#software"><span class="nav-num">07</span> Software setup</a>
-      <a href="#wiring"><span class="nav-num">08</span> Wiring & power</a>
-    </nav>
-    
-    <div class="sidebar-section">Code & Reference</div>
-    <nav>
-      <a href="#code"><span class="nav-num">09</span> The test sketch</a>
-      <a href="#text"><span class="nav-num">10</span> Writing text</a>
-      <a href="#trouble"><span class="nav-num">11</span> Troubleshooting</a>
-      <a href="#sources"><span class="nav-num">12</span> Sources & refs</a>
-    </nav>
-  </aside>
+    <!-- Left Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <span class="sb-tag">Study Guide</span>
+        <strong>HUB75 LED Matrix</strong>
+      </div>
 
-  <div class="wrap">
+      <div class="sidebar-section">Hardware & Theory</div>
+      <nav>
+        <a href="#safety"><span class="nav-num">01</span> Safety first</a>
+        <a href="#inside"><span class="nav-num">02</span> What's inside</a>
+        <a href="#pins"><span class="nav-num">03</span> The HUB75 pins</a>
+        <a href="#fewpins"><span class="nav-num">04</span> Multiplexing</a>
+        <a href="#sim"><span class="nav-num">05</span> Interactive animation</a>
+      </nav>
 
-<header class="hero">
-  <h1>HUB75 RGB LED Matrix — Interactive Study Guide</h1>
-  <p>How a 64&times;32 panel actually works, and how to drive it with the Adafruit MatrixPortal&nbsp;S3.</p>
-  <div class="badges">
-    <span class="badge">Board: MatrixPortal S3 (ESP32-S3)</span>
-    <span class="badge">Panel: 64&times;32 HUB75</span>
-    <span class="badge">Library: Adafruit Protomatter</span>
-  </div>
-</header>
+      <div class="sidebar-section">Project Setup</div>
+      <nav>
+        <a href="#materials"><span class="nav-num">06</span> Materials & tools</a>
+        <a href="#software"><span class="nav-num">07</span> Software setup</a>
+        <a href="#wiring"><span class="nav-num">08</span> Wiring & power</a>
+      </nav>
 
-<nav class="toc">
-  <strong>Contents</strong>
-  <ol>
-    <li><a href="#safety">Safety first (read before wiring)</a></li>
-    <li><a href="#inside">What's inside the panel</a></li>
-    <li><a href="#pins">What each HUB75 pin does</a></li>
-    <li><a href="#fewpins">How ~13 pins control 2048 pixels</a></li>
-    <li><a href="#sim">Interactive animation</a></li>
-    <li><a href="#materials">Materials &amp; tools you need</a></li>
-    <li><a href="#software">Software setup</a></li>
-    <li><a href="#wiring">Wiring &amp; power</a></li>
-    <li><a href="#code">The test sketch (pin mapping)</a></li>
-    <li><a href="#text">Writing text on the matrix</a></li>
-    <li><a href="#trouble">Troubleshooting</a></li>
-    <li><a href="#sources">Sources &amp; references</a></li>
-  </ol>
-</nav>
+      <div class="sidebar-section">Code & Reference</div>
+      <nav>
+        <a href="#code"><span class="nav-num">09</span> The test sketch</a>
+        <a href="#text"><span class="nav-num">10</span> Writing text</a>
+        <a href="#chain"><span class="nav-num">11</span> Chaining panels</a>
+        <a href="#fonts"><span class="nav-num">12</span> Custom fonts</a>
+        <a href="#trouble"><span class="nav-num">13</span> Troubleshooting</a>
+        <a href="#sources"><span class="nav-num">14</span> Sources & refs</a>
+      </nav>
+    </aside>
 
-<!-- ============ SAFETY ============ -->
-<h2 id="safety"><span class="n">01</span>Safety first — read this before you plug anything in</h2>
-<p>These panels are simple but they move a <em>lot</em> of current at low voltage, and the ESP32-S3 is a delicate 3.3&nbsp;V device. Almost every "my board died" story comes from one of the mistakes below. None of this is hard to avoid once you know it.</p>
+    <div class="wrap">
 
-<div class="danger-banner">
-  <h3>The three ways to actually destroy your hardware</h3>
-  <ul>
-    <li><strong>Reversed power polarity.</strong> Connecting +5&nbsp;V and GND backwards to the panel (or to the board's screw terminals) can instantly kill the panel and the board. The wires are usually red&nbsp;=&nbsp;+5V, black&nbsp;=&nbsp;GND. <strong>Double-check polarity before switching on.</strong></li>
-    <li><strong>Feeding 5&nbsp;V into a 3.3&nbsp;V GPIO.</strong> The ESP32-S3 logic pins are <strong>3.3&nbsp;V only</strong>. Never wire the matrix's 5&nbsp;V power rail into any GPIO, and never connect a 5&nbsp;V signal to the board's data pins. The HUB75 connector already handles this correctly; the danger is only if you start hand-wiring.</li>
-    <li><strong>Over-voltage.</strong> These panels want a <strong>regulated 5&nbsp;V</strong>. Anything above ~5.5&nbsp;V degrades or burns the LEDs. Do not use a 9&nbsp;V or 12&nbsp;V supply "because the barrel jack fits."</li>
-  </ul>
-</div>
+      <header class="hero">
+        <h1>HUB75 RGB LED Matrix — Interactive Study Guide</h1>
+        <p>How a 64&times;32 panel actually works, and how to drive it with the Adafruit MatrixPortal&nbsp;S3.</p>
+        <div class="badges">
+          <span class="badge">Board: MatrixPortal S3 (ESP32-S3)</span>
+          <span class="badge">Panel: 64&times;32 HUB75</span>
+          <span class="badge">Library: Adafruit Protomatter</span>
+        </div>
+      </header>
 
-<div class="callout danger">
-  <strong>Never power the matrix from USB alone.</strong> A 64&times;32 panel can draw up to <strong>~4&nbsp;A at 5&nbsp;V</strong> at full white brightness. A computer USB port supplies at most ~0.5&ndash;0.9&nbsp;A. Trying to run the panel off USB causes brownouts, random resets, and can damage the USB port or the board's regulator. The panel needs its own <strong>5&nbsp;V / 4&nbsp;A</strong> supply on the screw terminals.
-</div>
+      <nav class="toc">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#safety">Safety first (read before wiring)</a></li>
+          <li><a href="#inside">What's inside the panel</a></li>
+          <li><a href="#pins">What each HUB75 pin does</a></li>
+          <li><a href="#fewpins">How ~13 pins control 2048 pixels</a></li>
+          <li><a href="#sim">Interactive animation</a></li>
+          <li><a href="#materials">Materials &amp; tools you need</a></li>
+          <li><a href="#software">Software setup</a></li>
+          <li><a href="#wiring">Wiring &amp; power</a></li>
+          <li><a href="#code">The test sketch (pin mapping)</a></li>
+          <li><a href="#text">Writing text on the matrix</a></li>
+          <li><a href="#chain">Chaining multiple panels</a></li>
+          <li><a href="#fonts">Custom fonts</a></li>
+          <li><a href="#trouble">Troubleshooting</a></li>
+          <li><a href="#sources">Sources &amp; references</a></li>
+        </ol>
+      </nav>
 
-<div class="callout warn">
-  <strong>Things to be careful with:</strong>
-  <ul style="margin:8px 0 0;">
-    <li><strong>Common ground.</strong> If the board and the panel are ever powered from two different supplies, their grounds must be connected together. (On the MatrixPortal S3 driving one panel this is handled for you — just don't defeat it.)</li>
-    <li><strong>The bare metal on the back of the panel.</strong> The rear is exposed solder joints. Don't rest it on anything conductive (metal desk, loose wires, tools). A short across the 5&nbsp;V rail can spark and damage traces.</li>
-    <li><strong>Don't hot-plug the ribbon cable.</strong> Connect/disconnect the HUB75 ribbon and the power leads only while everything is powered <strong>off</strong>.</li>
-    <li><strong>Wire gauge.</strong> High current needs adequate wire. Thin jumper wires carrying 4&nbsp;A will heat up. Use the thick power leads that came with the panel.</li>
-    <li><strong>Start dim.</strong> Keep software brightness low (e.g. 20&ndash;40%) during first tests. Full white at 100% is the worst-case current draw and heat.</li>
-    <li><strong>Heat.</strong> Panels get warm in normal use. Give them airflow; don't box them in during long runs.</li>
-    <li><strong>Static (ESD).</strong> Handle the board by its edges. Touch a grounded metal object before handling to discharge yourself.</li>
-  </ul>
-</div>
+      <!-- ============ SAFETY ============ -->
+      <h2 id="safety"><span class="n">01</span>Safety first — read this before you plug anything in</h2>
+      <p>These panels are simple but they move a <em>lot</em> of current at low voltage, and the ESP32-S3 is a delicate
+        3.3&nbsp;V device. Almost every "my board died" story comes from one of the mistakes below. None of this is hard
+        to avoid once you know it.</p>
 
-<div class="callout tip">
-  <strong>The safe first-power-on ritual:</strong> (1)&nbsp;wire everything with power OFF, (2)&nbsp;visually verify red&rarr;+5V, black&rarr;GND polarity, (3)&nbsp;set brightness low in code, (4)&nbsp;power the 5&nbsp;V supply first and watch/smell for anything wrong, (5)&nbsp;then connect USB to program. If you ever see smoke, smell burning, or a chip gets too hot to touch, cut power immediately.
-</div>
+      <div class="danger-banner">
+        <h3>The three ways to actually destroy your hardware</h3>
+        <ul>
+          <li><strong>Reversed power polarity.</strong> Connecting +5&nbsp;V and GND backwards to the panel (or to the
+            board's screw terminals) can instantly kill the panel and the board. The wires are usually
+            red&nbsp;=&nbsp;+5V, black&nbsp;=&nbsp;GND. <strong>Double-check polarity before switching on.</strong></li>
+          <li><strong>Feeding 5&nbsp;V into a 3.3&nbsp;V GPIO.</strong> The ESP32-S3 logic pins are <strong>3.3&nbsp;V
+              only</strong>. Never wire the matrix's 5&nbsp;V power rail into any GPIO, and never connect a 5&nbsp;V
+            signal to the board's data pins. The HUB75 connector already handles this correctly; the danger is only if
+            you start hand-wiring.</li>
+          <li><strong>Over-voltage.</strong> These panels want a <strong>regulated 5&nbsp;V</strong>. Anything above
+            ~5.5&nbsp;V degrades or burns the LEDs. Do not use a 9&nbsp;V or 12&nbsp;V supply "because the barrel jack
+            fits."</li>
+        </ul>
+      </div>
 
-<!-- ============ THEORY ============ -->
-<h2 id="inside"><span class="n">02</span>What's actually inside the panel</h2>
-<p>A 64&times;32 HUB75 panel is <em>not</em> a grid of individually addressable pixels like a monitor. Inside are LED-driver shift-register chips that can only light <strong>two rows at a time</strong>. The panel rapidly cycles through all the row-pairs, and your eyes blend the flashes into one steady image — the same persistence-of-vision trick used by film and old CRT TVs.</p>
-<ul>
-  <li>The 32 rows are split into a <strong>top half</strong> (rows 0&ndash;15) and a <strong>bottom half</strong> (rows 16&ndash;31), driven at the same time.</li>
-  <li>For one row-pair, the controller streams color data for all 64 columns one pixel at a time, "latches" it to display, then moves to the next row-pair.</li>
-  <li>This repeats thousands of times per second, so the whole panel looks continuously lit.</li>
-</ul>
-<p>That's why the connector has <strong>two</strong> sets of RGB pins: <code>R1 G1 B1</code> for the top half, <code>R2 G2 B2</code> for the bottom half.</p>
+      <div class="callout danger">
+        <strong>Never power the matrix from USB alone.</strong> A 64&times;32 panel can draw up to <strong>~4&nbsp;A at
+          5&nbsp;V</strong> at full white brightness. A computer USB port supplies at most ~0.5&ndash;0.9&nbsp;A. Trying
+        to run the panel off USB causes brownouts, random resets, and can damage the USB port or the board's regulator.
+        The panel needs its own <strong>5&nbsp;V / 4&nbsp;A</strong> supply on the screw terminals.
+      </div>
 
-<h2 id="pins"><span class="n">03</span>What each HUB75 pin does</h2>
-<table>
-  <thead><tr><th>Pins</th><th>Name</th><th>Purpose</th></tr></thead>
-  <tbody>
-    <tr><td><code>R1 G1 B1</code></td><td>Top RGB data</td><td>Color bits for the pixel currently being clocked into the <strong>top half</strong> shift register</td></tr>
-    <tr><td><code>R2 G2 B2</code></td><td>Bottom RGB data</td><td>Color bits for the pixel currently being clocked into the <strong>bottom half</strong> shift register — loaded <em>simultaneously</em> with the top half</td></tr>
-    <tr><td><code>A B C D (E)</code></td><td>Row address</td><td>4-bit binary number (0–15) selecting <strong>which row-pair</strong> is active. Address 0100<sub>b</sub>&nbsp;= 4 → activates row 4 (top) and row 20 (bottom, = 16+4) at the same time</td></tr>
-    <tr><td><code>CLK</code></td><td>Clock</td><td>Each rising edge shifts the current RGB values <strong>one column to the right</strong> inside the shift register — column 0 enters first and slides all the way to column 63 after 64 pulses</td></tr>
-    <tr><td><code>LAT</code></td><td>Latch</td><td>Pulses once after all 64 CLK pulses: copies the completed shift-register row into the output register so it actually drives the LEDs</td></tr>
-    <tr><td><code>OE</code></td><td>Output Enable</td><td><strong>Active-LOW.</strong> While LOW the LEDs are on; while HIGH they are off. The driver pulses it HIGH briefly between rows (during the LAT + address change), then brings it LOW again. <strong>Brightness control:</strong> by varying <em>how long</em> OE stays HIGH (called OE blanking time), the driver dims the row — longer blanking = less on-time per cycle = dimmer. This is separate from BCM color depth.</td></tr>
-  </tbody>
-</table>
+      <div class="callout warn">
+        <strong>Things to be careful with:</strong>
+        <ul style="margin:8px 0 0;">
+          <li><strong>Common ground.</strong> If the board and the panel are ever powered from two different supplies,
+            their grounds must be connected together. (On the MatrixPortal S3 driving one panel this is handled for you
+            — just don't defeat it.)</li>
+          <li><strong>The bare metal on the back of the panel.</strong> The rear is exposed solder joints. Don't rest it
+            on anything conductive (metal desk, loose wires, tools). A short across the 5&nbsp;V rail can spark and
+            damage traces.</li>
+          <li><strong>Don't hot-plug the ribbon cable.</strong> Connect/disconnect the HUB75 ribbon and the power leads
+            only while everything is powered <strong>off</strong>.</li>
+          <li><strong>Wire gauge.</strong> High current needs adequate wire. Thin jumper wires carrying 4&nbsp;A will
+            heat up. Use the thick power leads that came with the panel.</li>
+          <li><strong>Start dim.</strong> Keep software brightness low (e.g. 20&ndash;40%) during first tests. Full
+            white at 100% is the worst-case current draw and heat.</li>
+          <li><strong>Heat.</strong> Panels get warm in normal use. Give them airflow; don't box them in during long
+            runs.</li>
+          <li><strong>Static (ESD).</strong> Handle the board by its edges. Touch a grounded metal object before
+            handling to discharge yourself.</li>
+        </ul>
+      </div>
 
-<h3>Can a pixel be more than one color? Can I mix R + G?</h3>
-<p>Yes — each pixel has three independent LEDs (red, green, blue) inside it, and <em>any combination</em> can be on at the same time:</p>
-<ul>
-  <li><code>R1=1 G1=0 B1=0</code> → red pixel only</li>
-  <li><code>R1=1 G1=1 B1=0</code> → red + green together → <strong>yellow</strong></li>
-  <li><code>R1=1 G1=1 B1=1</code> → all three → <strong>white</strong></li>
-  <li><code>R1=0 G1=0 B1=1</code> → blue only</li>
-</ul>
-<p>But remember these are still just 1-bit signals per channel at any instant — fully on or fully off. The perception of brightness and intermediate shades (like orange or sky-blue) comes from BCM: the library rapidly alternates between different on/off patterns weighted by time, so your eye averages them into smooth colors.</p>
+      <div class="callout tip">
+        <strong>The safe first-power-on ritual:</strong> (1)&nbsp;wire everything with power OFF, (2)&nbsp;visually
+        verify red&rarr;+5V, black&rarr;GND polarity, (3)&nbsp;set brightness low in code, (4)&nbsp;power the 5&nbsp;V
+        supply first and watch/smell for anything wrong, (5)&nbsp;then connect USB to program. If you ever see smoke,
+        smell burning, or a chip gets too hot to touch, cut power immediately.
+      </div>
 
-<h3>Why each color pin is only 1 bit — and how you still get millions of colors (BCM)</h3>
-<p>At any single moment, <code>R1</code> is just HIGH or LOW — the raw panel has no per-pixel analog brightness. To get smooth gradients, the driver library redraws the whole panel many times per video frame. Each redraw uses a different time weighting: pass 1 stays on for 1 unit, pass 2 for 2 units, pass 4 for 4 units, pass 8 for 8 units, and so on (binary weights). Your eye averages the flashes into a perceived brightness level. This is <strong>Binary Code Modulation (BCM)</strong>. The "bit depth" setting in code controls how many weighted passes happen per frame — more depth means smoother color gradients but requires faster refresh to avoid visible flicker.</p>
+      <!-- ============ THEORY ============ -->
+      <h2 id="inside"><span class="n">02</span>What's actually inside the panel</h2>
+      <p>A 64&times;32 HUB75 panel is <em>not</em> a grid of individually addressable pixels like a monitor. Inside are
+        LED-driver shift-register chips that can only light <strong>two rows at a time</strong>. The panel rapidly
+        cycles through all the row-pairs, and your eyes blend the flashes into one steady image — the same
+        persistence-of-vision trick used by film and old CRT TVs.</p>
+      <ul>
+        <li>The 32 rows are split into a <strong>top half</strong> (rows 0&ndash;15) and a <strong>bottom half</strong>
+          (rows 16&ndash;31), driven at the same time.</li>
+        <li>For one row-pair, the controller streams color data for all 64 columns one pixel at a time, "latches" it to
+          display, then moves to the next row-pair.</li>
+        <li>This repeats thousands of times per second, so the whole panel looks continuously lit.</li>
+      </ul>
+      <p>That's why the connector has <strong>two</strong> sets of RGB pins: <code>R1 G1 B1</code> for the top half,
+        <code>R2 G2 B2</code> for the bottom half.</p>
 
-<h3>Address pins, row-pairs, and "scan rate"</h3>
-<p>Setting the address pins to 0100<sub>b</sub>&nbsp;(decimal 4) selects <strong>row 4</strong> in the top half and <strong>row 20</strong> (= 16 + 4) in the bottom half simultaneously. The two halves are always updated in pairs — that is why there are two sets of RGB pins.</p>
-<ul>
-  <li><strong>1/16 scan</strong> (most 64&times;32 panels): 16 row-pairs → 4 address pins <code>A B C D</code> (2<sup>4</sup>=16 combinations). 16&times;2 = 32 rows total.</li>
-  <li><strong>1/32 scan</strong> (most 64&times;64 panels): 32 row-pairs → 5 address pins <code>A B C D E</code> (2<sup>5</sup>=32). 32&times;2 = 64 rows total.</li>
-</ul>
-<p>So our 64&times;32 panel uses only <code>A B C D</code> and leaves <code>E</code> unused.</p>
+      <h2 id="pins"><span class="n">03</span>What each HUB75 pin does</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Pins</th>
+            <th>Name</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>R1 G1 B1</code></td>
+            <td>Top RGB data</td>
+            <td>Color bits for the pixel currently being clocked into the <strong>top half</strong> shift register</td>
+          </tr>
+          <tr>
+            <td><code>R2 G2 B2</code></td>
+            <td>Bottom RGB data</td>
+            <td>Color bits for the pixel currently being clocked into the <strong>bottom half</strong> shift register —
+              loaded <em>simultaneously</em> with the top half</td>
+          </tr>
+          <tr>
+            <td><code>A B C D (E)</code></td>
+            <td>Row address</td>
+            <td>4-bit binary number (0–15) selecting <strong>which row-pair</strong> is active. Address
+              0100<sub>b</sub>&nbsp;= 4 → activates row 4 (top) and row 20 (bottom, = 16+4) at the same time</td>
+          </tr>
+          <tr>
+            <td><code>CLK</code></td>
+            <td>Clock</td>
+            <td>Each rising edge shifts the current RGB values <strong>one column to the right</strong> inside the shift
+              register — column 0 enters first and slides all the way to column 63 after 64 pulses</td>
+          </tr>
+          <tr>
+            <td><code>LAT</code></td>
+            <td>Latch</td>
+            <td>Pulses once after all 64 CLK pulses: copies the completed shift-register row into the output register so
+              it actually drives the LEDs</td>
+          </tr>
+          <tr>
+            <td><code>OE</code></td>
+            <td>Output Enable</td>
+            <td><strong>Active-LOW.</strong> While LOW the LEDs are on; while HIGH they are off. The driver pulses it
+              HIGH briefly between rows (during the LAT + address change), then brings it LOW again. <strong>Brightness
+                control:</strong> by varying <em>how long</em> OE stays HIGH (called OE blanking time), the driver dims
+              the row — longer blanking = less on-time per cycle = dimmer. This is separate from BCM color depth.</td>
+          </tr>
+        </tbody>
+      </table>
 
-<h2 id="fewpins"><span class="n">04</span>How ~13 pins control all 2048 pixels</h2>
-<p>A 64&times;32 panel has 2048 pixels but only ~13 signal wires. It works by combining two tricks that each cut the problem down a different axis:</p>
-<h3>Trick 1 — Multiplexing: 4 wires pick 1 of 16 row-pairs</h3>
-<p>The address pins <code>A B C D</code> form a 4-bit number 0&ndash;15. Each value activates exactly one row-pair; all others ignore the RGB pins. Instead of 32 separate row-select wires, 4 wires encode 16 choices (2<sup>4</sup>=16). This is a classic binary decoder.</p>
-<h3>Trick 2 — Serial shifting: 6 wires + 64 clock pulses fill a whole row</h3>
-<p>Within the selected row-pair you still must color 64 columns, but you only have 6 color wires. A shift register inside the panel solves this like a horizontal conveyor belt:</p>
-<ol>
-  <li>Put column&nbsp;0's color on <code>R1 G1 B1 R2 G2 B2</code>.</li>
-  <li>Pulse <code>CLK</code> — that pixel value enters the <em>leftmost</em> slot of the shift register. Everything already inside slides one position to the right.</li>
-  <li>Put column&nbsp;1's color, pulse <code>CLK</code> — column 1 enters the left slot, pushing column 0 one step right.</li>
-  <li>Keep going left-to-right across all 64 columns. After 64 CLK pulses the conveyor is full: column 0 has traveled all the way to the rightmost slot (column 63's position), column 63 is in the leftmost slot — all 64 columns are in place using only 6 wires.</li>
-</ol>
-<p>Then <code>LAT</code> copies that whole completed row to the LED output drivers at once, making all 64 pixels of the pair visible simultaneously.</p>
-<div class="callout info">
-  <strong>Putting it together:</strong> 4 address wires choose the row-pair (multiplexing), 6 RGB wires + 64 CLK pulses load that row-pair's colors (shifting), and this repeats for all 16 addresses faster than the eye can see. Pixels touched per full sweep: 16&nbsp;&times;&nbsp;64&nbsp;&times;&nbsp;2&nbsp;=&nbsp;<strong>2048</strong>, exactly the panel. Few wires, because address pins trade wires for <em>time</em> and the clock trades wires for a <em>sequence of pulses</em>.
-</div>
+      <h3>Can a pixel be more than one color? Can I mix R + G?</h3>
+      <p>Yes — each pixel has three independent LEDs (red, green, blue) inside it, and <em>any combination</em> can be
+        on at the same time:</p>
+      <ul>
+        <li><code>R1=1 G1=0 B1=0</code> → red pixel only</li>
+        <li><code>R1=1 G1=1 B1=0</code> → red + green together → <strong>yellow</strong></li>
+        <li><code>R1=1 G1=1 B1=1</code> → all three → <strong>white</strong></li>
+        <li><code>R1=0 G1=0 B1=1</code> → blue only</li>
+      </ul>
+      <p>But remember these are still just 1-bit signals per channel at any instant — fully on or fully off. The
+        perception of brightness and intermediate shades (like orange or sky-blue) comes from BCM: the library rapidly
+        alternates between different on/off patterns weighted by time, so your eye averages them into smooth colors.</p>
 
-<!-- ============ INTERACTIVE ============ -->
-<h2 id="sim"><span class="n">05</span>See it happen — interactive animation</h2>
-<p>The left panel is what your eyes perceive; the right is what's <em>electrically</em> lit at any single instant — only the addressed row-pair. Watch the shift register fill one column per <code>CLK</code>, the address bits count in binary, and <code>LAT</code>/<code>OE</code> flash. <strong>Click the A/B/C/D bits</strong> to jump to any row-pair yourself, use <strong>Step</strong> to go one clock at a time, or slow the speed right down. The test image spells <strong>TPS</strong> — the T is lit only on the <strong>Red</strong> channel, the P only on <strong>Green</strong>, and the S only on <strong>Blue</strong>, so you can watch each color channel work independently.</p>
+      <h3>Why each color pin is only 1 bit — and how you still get millions of colors (BCM)</h3>
+      <p>At any single moment, <code>R1</code> is just HIGH or LOW — the raw panel has no per-pixel analog brightness.
+        To get smooth gradients, the driver library redraws the whole panel many times per video frame. Each redraw uses
+        a different time weighting: pass 1 stays on for 1 unit, pass 2 for 2 units, pass 4 for 4 units, pass 8 for 8
+        units, and so on (binary weights). Your eye averages the flashes into a perceived brightness level. This is
+        <strong>Binary Code Modulation (BCM)</strong>. The "bit depth" setting in code controls how many weighted passes
+        happen per frame — more depth means smoother color gradients but requires faster refresh to avoid visible
+        flicker.</p>
 
-<div class="connector-card">
-  <div class="conn-title">The HUB75 connector — every pin used in the animation below</div>
-  <div class="conn-grid">
-    <div class="conn-row">
-      <div class="pin rgb"><span class="sig">R1</span><small>GPIO42</small></div>
-      <div class="pin rgb"><span class="sig">G1</span><small>GPIO41</small></div>
-      <div class="pin rgb"><span class="sig">B1</span><small>GPIO40</small></div>
-      <div class="pin gnd"><span class="sig">GND</span><small>&nbsp;</small></div>
-      <div class="pin rgb"><span class="sig">R2</span><small>GPIO38</small></div>
-      <div class="pin rgb"><span class="sig">G2</span><small>GPIO39</small></div>
-      <div class="pin rgb"><span class="sig">B2</span><small>GPIO37</small></div>
-      <div class="pin gnd"><span class="sig">GND</span><small>&nbsp;</small></div>
-    </div>
-    <div class="conn-row">
-      <div class="pin addr"><span class="sig">A</span><small>GPIO45</small></div>
-      <div class="pin addr"><span class="sig">B</span><small>GPIO36</small></div>
-      <div class="pin addr"><span class="sig">C</span><small>GPIO48</small></div>
-      <div class="pin addr"><span class="sig">D</span><small>GPIO35</small></div>
-      <div class="pin ctrl"><span class="sig">CLK</span><small>GPIO2</small></div>
-      <div class="pin ctrl"><span class="sig">LAT</span><small>GPIO47</small></div>
-      <div class="pin ctrl"><span class="sig">OE</span><small>GPIO14</small></div>
-      <div class="pin gnd"><span class="sig">GND</span><small>&nbsp;</small></div>
-    </div>
-  </div>
-  <div class="conn-legend">
-    <span><i class="sw rgb"></i>RGB color data</span>
-    <span><i class="sw addr"></i>Row address</span>
-    <span><i class="sw ctrl"></i>Timing control</span>
-    <span><i class="sw gnd"></i>Ground</span>
-  </div>
-  <div class="hint">Standard HUB75 16-pin layout: top row carries RGB color data, bottom row carries the address and timing lines. This board leaves the <code>E</code> pin (used only by 64&times;64 panels) disconnected.</div>
-</div>
+      <h3>Address pins, row-pairs, and "scan rate"</h3>
+      <p>Setting the address pins to 0100<sub>b</sub>&nbsp;(decimal 4) selects <strong>row 4</strong> in the top half
+        and <strong>row 20</strong> (= 16 + 4) in the bottom half simultaneously. The two halves are always updated in
+        pairs — that is why there are two sets of RGB pins.</p>
+      <ul>
+        <li><strong>1/16 scan</strong> (most 64&times;32 panels): 16 row-pairs → 4 address pins <code>A B C D</code>
+          (2<sup>4</sup>=16 combinations). 16&times;2 = 32 rows total.</li>
+        <li><strong>1/32 scan</strong> (most 64&times;64 panels): 32 row-pairs → 5 address pins <code>A B C D E</code>
+          (2<sup>5</sup>=32). 32&times;2 = 64 rows total.</li>
+      </ul>
+      <p>So our 64&times;32 panel uses only <code>A B C D</code> and leaves <code>E</code> unused.</p>
 
-<div class="sim" id="sim">
-  <!-- Controls bar -->
-  <div class="ctrls" style="margin-bottom: 4px; padding: 4px 10px; background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); justify-content: center;">
-    <button class="btn" id="stepBack">&#9664; Step</button>
-    <button class="btn" id="play">Pause</button>
-    <button class="btn" id="step">Step &#9654;</button>
-    <button class="btn" id="reset">Reset</button>
-    <label class="slabel" style="margin-left: 12px;">Speed <input type="range" id="speed" min="1" max="60" value="14"></label>
-  </div>
+      <h2 id="fewpins"><span class="n">04</span>How ~13 pins control all 2048 pixels</h2>
+      <p>A 64&times;32 panel has 2048 pixels but only ~13 signal wires. It works by combining two tricks that each cut
+        the problem down a different axis:</p>
+      <h3>Trick 1 — Multiplexing: 4 wires pick 1 of 16 row-pairs</h3>
+      <p>The address pins <code>A B C D</code> form a 4-bit number 0&ndash;15. Each value activates exactly one
+        row-pair; all others ignore the RGB pins. Instead of 32 separate row-select wires, 4 wires encode 16 choices
+        (2<sup>4</sup>=16). This is a classic binary decoder.</p>
+      <h3>Trick 2 — Serial shifting: 6 wires + 64 clock pulses fill a whole row</h3>
+      <p>Within the selected row-pair you still must color 64 columns, but you only have 6 color wires. A shift register
+        inside the panel solves this like a horizontal conveyor belt:</p>
+      <ol>
+        <li>Put column&nbsp;0's color on <code>R1 G1 B1 R2 G2 B2</code>.</li>
+        <li>Pulse <code>CLK</code> — that pixel value enters the <em>leftmost</em> slot of the shift register.
+          Everything already inside slides one position to the right.</li>
+        <li>Put column&nbsp;1's color, pulse <code>CLK</code> — column 1 enters the left slot, pushing column 0 one step
+          right.</li>
+        <li>Keep going left-to-right across all 64 columns. After 64 CLK pulses the conveyor is full: column 0 has
+          traveled all the way to the rightmost slot (column 63's position), column 63 is in the leftmost slot — all 64
+          columns are in place using only 6 wires.</li>
+      </ol>
+      <p>Then <code>LAT</code> copies that whole completed row to the LED output drivers at once, making all 64 pixels
+        of the pair visible simultaneously.</p>
+      <div class="callout info">
+        <strong>Putting it together:</strong> 4 address wires choose the row-pair (multiplexing), 6 RGB wires + 64 CLK
+        pulses load that row-pair's colors (shifting), and this repeats for all 16 addresses faster than the eye can
+        see. Pixels touched per full sweep:
+        16&nbsp;&times;&nbsp;64&nbsp;&times;&nbsp;2&nbsp;=&nbsp;<strong>2048</strong>, exactly the panel. Few wires,
+        because address pins trade wires for <em>time</em> and the clock trades wires for a <em>sequence of pulses</em>.
+      </div>
 
-  <!-- Row 1: Two panel canvases + shift register + address bits -->
-  <div class="sim-row">
-    <div class="sim-panel" style="max-width:280px;">
-      <div class="title">What your eyes see</div>
-      <canvas id="p1" width="384" height="192" style="max-height:120px; width:auto; display:block; margin:0 auto;"></canvas>
-    </div>
-    <div class="sim-panel" style="max-width:280px;">
-      <div class="title">Electrically active now</div>
-      <canvas id="p2" width="384" height="192" style="max-height:120px; width:auto; display:block; margin:0 auto;"></canvas>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:200px;">
-      <div class="sim-panel" style="padding:4px 6px;">
-        <div class="title" style="margin-bottom:2px;">Shift register</div>
-        <canvas id="sr" width="384" height="34" style="max-height:18px; width:auto; display:block; margin:0 auto;"></canvas>
-        <div class="sr-labels" style="margin-top:1px; font-size:9px; justify-content:center;">
-          <span>Top &rarr; R1/G1/B1</span>
-          <span>Bottom &rarr; R2/G2/B2</span>
+      <!-- ============ INTERACTIVE ============ -->
+      <h2 id="sim"><span class="n">05</span>See it happen — interactive animation</h2>
+      <p>The left panel is what your eyes perceive; the right is what's <em>electrically</em> lit at any single instant
+        — only the addressed row-pair. Watch the shift register fill one column per <code>CLK</code>, the address bits
+        count in binary, and <code>LAT</code>/<code>OE</code> flash. <strong>Click the A/B/C/D bits</strong> to jump to
+        any row-pair yourself, use <strong>Step</strong> to go one clock at a time, or slow the speed right down. The
+        test image spells <strong>TPS</strong> — the T is lit only on the <strong>Red</strong> channel, the P only on
+        <strong>Green</strong>, and the S only on <strong>Blue</strong>, so you can watch each color channel work
+        independently.</p>
+
+      <div class="connector-card">
+        <div class="conn-title">The HUB75 connector — every pin used in the animation below</div>
+        <div class="conn-grid">
+          <div class="conn-row">
+            <div class="pin rgb"><span class="sig">R1</span><small>GPIO42</small></div>
+            <div class="pin rgb"><span class="sig">G1</span><small>GPIO41</small></div>
+            <div class="pin rgb"><span class="sig">B1</span><small>GPIO40</small></div>
+            <div class="pin gnd"><span class="sig">GND</span><small>&nbsp;</small></div>
+            <div class="pin rgb"><span class="sig">R2</span><small>GPIO38</small></div>
+            <div class="pin rgb"><span class="sig">G2</span><small>GPIO39</small></div>
+            <div class="pin rgb"><span class="sig">B2</span><small>GPIO37</small></div>
+            <div class="pin gnd"><span class="sig">GND</span><small>&nbsp;</small></div>
+          </div>
+          <div class="conn-row">
+            <div class="pin addr"><span class="sig">A</span><small>GPIO45</small></div>
+            <div class="pin addr"><span class="sig">B</span><small>GPIO36</small></div>
+            <div class="pin addr"><span class="sig">C</span><small>GPIO48</small></div>
+            <div class="pin addr"><span class="sig">D</span><small>GPIO35</small></div>
+            <div class="pin ctrl"><span class="sig">CLK</span><small>GPIO2</small></div>
+            <div class="pin ctrl"><span class="sig">LAT</span><small>GPIO47</small></div>
+            <div class="pin ctrl"><span class="sig">OE</span><small>GPIO14</small></div>
+            <div class="pin gnd"><span class="sig">GND</span><small>&nbsp;</small></div>
+          </div>
+        </div>
+        <div class="conn-legend">
+          <span><i class="sw rgb"></i>RGB color data</span>
+          <span><i class="sw addr"></i>Row address</span>
+          <span><i class="sw ctrl"></i>Timing control</span>
+          <span><i class="sw gnd"></i>Ground</span>
+        </div>
+        <div class="hint">Standard HUB75 16-pin layout: top row carries RGB color data, bottom row carries the address
+          and timing lines. This board leaves the <code>E</code> pin (used only by 64&times;64 panels) disconnected.
         </div>
       </div>
-      <div class="sig-block" style="margin-top:0; padding:4px 10px;">
-        <div class="sig-label">Addr &mdash; click to jump</div>
-        <div class="bits" id="bits">
-          <div class="bit" data-bit="0"><span>A</span></div>
-          <div class="bit" data-bit="1"><span>B</span></div>
-          <div class="bit" data-bit="2"><span>C</span></div>
-          <div class="bit" data-bit="3"><span>D</span></div>
+
+      <div class="sim" id="sim">
+        <!-- Controls bar -->
+        <div class="ctrls"
+          style="margin-bottom: 4px; padding: 4px 10px; background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); justify-content: center;">
+          <button class="btn" id="stepBack">&#9664; Step</button>
+          <button class="btn" id="play">Pause</button>
+          <button class="btn" id="step">Step &#9654;</button>
+          <button class="btn" id="reset">Reset</button>
+          <label class="slabel" style="margin-left: 12px;">Speed <input type="range" id="speed" min="1" max="60"
+              value="14"></label>
         </div>
-        <div class="addr-out" id="addrOut"></div>
+
+        <!-- Row 1: Two panel canvases + shift register + address bits -->
+        <div class="sim-row">
+          <div class="sim-panel" style="max-width:280px;">
+            <div class="title">What your eyes see</div>
+            <canvas id="p1" width="384" height="192"
+              style="max-height:120px; width:auto; display:block; margin:0 auto;"></canvas>
+          </div>
+          <div class="sim-panel" style="max-width:280px;">
+            <div class="title">Electrically active now</div>
+            <canvas id="p2" width="384" height="192"
+              style="max-height:120px; width:auto; display:block; margin:0 auto;"></canvas>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:200px;">
+            <div class="sim-panel" style="padding:4px 6px;">
+              <div class="title" style="margin-bottom:2px;">Shift register</div>
+              <canvas id="sr" width="384" height="34"
+                style="max-height:18px; width:auto; display:block; margin:0 auto;"></canvas>
+              <div class="sr-labels" style="margin-top:1px; font-size:9px; justify-content:center;">
+                <span>Top &rarr; R1/G1/B1</span>
+                <span>Bottom &rarr; R2/G2/B2</span>
+              </div>
+            </div>
+            <div class="sig-block" style="margin-top:0; padding:4px 10px;">
+              <div class="sig-label">Addr &mdash; click to jump</div>
+              <div class="bits" id="bits">
+                <div class="bit" data-bit="0"><span>A</span></div>
+                <div class="bit" data-bit="1"><span>B</span></div>
+                <div class="bit" data-bit="2"><span>C</span></div>
+                <div class="bit" data-bit="3"><span>D</span></div>
+              </div>
+              <div class="addr-out" id="addrOut"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Waveform -->
+        <div class="sim-panel" style="margin-top:4px; padding:4px 6px;">
+          <div class="title" style="margin-bottom:1px;">Signal waveform <span
+              style="font-weight:400;color:var(--text-mute);font-size:10px;">&mdash; CLK &middot; A B C D &middot; LAT
+              &middot; OE &middot; R1 G1 B1 &middot; R2 G2 B2</span></div>
+          <canvas id="wc" width="800" height="170"
+            style="width:100%;height:auto;display:block;border-radius:6px;margin-top:0;"></canvas>
+        </div>
+
+        <div class="cap" id="cap"></div>
       </div>
-    </div>
-  </div>
 
-  <!-- Waveform -->
-  <div class="sim-panel" style="margin-top:4px; padding:4px 6px;">
-    <div class="title" style="margin-bottom:1px;">Signal waveform <span style="font-weight:400;color:var(--text-mute);font-size:10px;">&mdash; CLK &middot; A B C D &middot; LAT &middot; OE &middot; R1 G1 B1 &middot; R2 G2 B2</span></div>
-    <canvas id="wc" width="800" height="170" style="width:100%;height:auto;display:block;border-radius:6px;margin-top:0;"></canvas>
-  </div>
+      <!-- ============ MATERIALS ============ -->
+      <h2 id="materials"><span class="n">06</span>Materials &amp; tools you need</h2>
+      <div class="card">
+        <h3 style="margin-top:0;">Hardware</h3>
+        <ul>
+          <li><strong>Adafruit MatrixPortal S3</strong> (the ESP32-S3 controller with the HUB75 connector on the
+            back).<br><img
+              src="https://cdn-learn.adafruit.com/assets/assets/000/094/914/medium800/adafruit_io_mxprtl-3876.jpg"
+              alt="MatrixPortal S3"
+              style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+          </li>
+          <li><strong>64&times;32 HUB75 RGB LED matrix panel</strong> (any pixel pitch — P3, P4, P5&hellip; the pitch
+            only changes physical size, not the code).<br><img
+              src="https://cdn-learn.adafruit.com/assets/assets/000/094/912/medium640/adafruit_io_mxprtl-3874.jpg"
+              alt="RGB LED Matrix"
+              style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+          </li>
+          <li><strong>5&nbsp;V power supply rated at least 4&nbsp;A</strong> for a single 64&times;32 panel. A
+            5&nbsp;V&nbsp;/&nbsp;4&nbsp;A "wall wart" is the recommended baseline; more headroom (5&nbsp;A) is fine.
+          </li>
+          <li><strong>Power leads</strong> — the panel usually ships with a power cable (red/black with a 4-pin plug on
+            one end and spade/fork terminals on the other) that goes to the board's screw terminals.<br><img
+              src="https://cdn-learn.adafruit.com/assets/assets/000/094/910/medium640/adafruit_io_mxprtl-3872.jpg"
+              alt="Power cable"
+              style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+          </li>
+          <li><strong>HUB75 ribbon cable</strong> — usually included with the panel; or plug the board directly onto the
+            panel's rear connector.</li>
+          <li><strong>USB-C cable</strong> (data-capable, not charge-only) to program the board.</li>
+        </ul>
+        <h3>Tools</h3>
+        <ul>
+          <li><strong>Small flat screwdriver</strong> for the power screw terminals.<br><img
+              src="https://cdn-learn.adafruit.com/assets/assets/000/094/907/medium640/adafruit_io_mxprtl-3869.jpg"
+              alt="Screwdriver on power terminals"
+              style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+          </li>
+          <li><strong>Diagonal Cutters</strong> (Optional: Needed if there's a plastic nub on the matrix that prevents
+            the MatrixPortal from plugging in firmly).<br><img
+              src="https://cdn-learn.adafruit.com/assets/assets/000/094/915/medium800/adafruit_io_mxprtl-3877.jpg"
+              alt="Cutting plastic nub"
+              style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+          </li>
+          <li>A computer running the Arduino IDE.</li>
+          <li>(Optional) multimeter to confirm your supply reads ~5&nbsp;V and to check polarity before connecting.</li>
+        </ul>
+      </div>
 
-  <div class="cap" id="cap"></div>
-</div>
+      <!-- ============ SOFTWARE ============ -->
+      <h2 id="software"><span class="n">07</span>Software setup</h2>
+      <div class="callout warn">
+        <strong>Warning:</strong> The ESP32-S2/S3 bootloader does not have USB serial support for Windows 7 or 8. (See
+        <a href="https://github.com/espressif/arduino-esp32/issues/5994" class="link">this issue</a>) Please update to
+        version 10 which is supported by Espressif! Alternatively, you can try this <a
+          href="https://github.com/kutukvpavel/Esp32-Win7-VCP-drivers" class="link">community-crafted Windows 7
+          driver</a>.
+      </div>
+      <ol>
+        <li>Install the <strong>Arduino IDE 2.x</strong>.</li>
+        <li>Add ESP32 board support: <em>File &rarr; Preferences</em>, add the Espressif board-manager URL
+          (<code>https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</code>).
+          <br><img src="assets/ArduinoIDEPreferences.png" alt="Arduino IDE Preferences"
+            style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+          Then open <em>Boards Manager</em> and install <strong>"esp32" by Espressif Systems</strong>.
+          <br><img src="assets/IDEBoardManages.png" alt="Boards Manager ESP32"
+            style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+        </li>
+        <li>Select the board: Go to <em>Tools &rarr; Board &rarr; ESP32 Arduino</em> and select the <strong>Adafruit
+            MatrixPortal ESP32-S3</strong> (or Adafruit Feather ESP32-S3) entry. (If you don't see the <em>ESP32
+            Arduino</em> sub-menu, the board support package from step 2 isn't fully installed yet).
+          <br><img src="assets/MatrixBoardSelection.png" alt="MatrixPortal Board Selection"
+            style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+        </li>
+        <li>Install libraries via <em>Library Manager</em>: <strong>Adafruit Protomatter</strong> (pulls in
+          <strong>Adafruit GFX</strong> and <strong>Adafruit BusIO</strong> as dependencies — accept them).
+          <br><img src="assets/AdafruitProtomatter.png" alt="Library Manager Protomatter"
+            style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+        </li>
+        <li>Enable <strong>USB CDC On Boot</strong> under Tools if you want Serial Monitor output over USB.</li>
+        <li><strong>Select the Port:</strong> Go to <em>Tools &rarr; Port</em> and select the COM port labeled with the
+          board name.
+          <br><img src="assets/PortSelection.png" alt="Port Selection"
+            style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
+        </li>
+      </ol>
 
-<!-- ============ MATERIALS ============ -->
-<h2 id="materials"><span class="n">06</span>Materials &amp; tools you need</h2>
-<div class="card">
-  <h3 style="margin-top:0;">Hardware</h3>
-  <ul>
-    <li><strong>Adafruit MatrixPortal S3</strong> (the ESP32-S3 controller with the HUB75 connector on the back).<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/914/medium800/adafruit_io_mxprtl-3876.jpg" alt="MatrixPortal S3" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
-    <li><strong>64&times;32 HUB75 RGB LED matrix panel</strong> (any pixel pitch — P3, P4, P5&hellip; the pitch only changes physical size, not the code).<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/912/medium640/adafruit_io_mxprtl-3874.jpg" alt="RGB LED Matrix" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
-    <li><strong>5&nbsp;V power supply rated at least 4&nbsp;A</strong> for a single 64&times;32 panel. A 5&nbsp;V&nbsp;/&nbsp;4&nbsp;A "wall wart" is the recommended baseline; more headroom (5&nbsp;A) is fine.</li>
-    <li><strong>Power leads</strong> — the panel usually ships with a power cable (red/black with a 4-pin plug on one end and spade/fork terminals on the other) that goes to the board's screw terminals.<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/910/medium640/adafruit_io_mxprtl-3872.jpg" alt="Power cable" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
-    <li><strong>HUB75 ribbon cable</strong> — usually included with the panel; or plug the board directly onto the panel's rear connector.</li>
-    <li><strong>USB-C cable</strong> (data-capable, not charge-only) to program the board.</li>
-  </ul>
-  <h3>Tools</h3>
-  <ul>
-    <li><strong>Small flat screwdriver</strong> for the power screw terminals.<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/907/medium640/adafruit_io_mxprtl-3869.jpg" alt="Screwdriver on power terminals" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
-    <li><strong>Diagonal Cutters</strong> (Optional: Needed if there's a plastic nub on the matrix that prevents the MatrixPortal from plugging in firmly).<br><img src="https://cdn-learn.adafruit.com/assets/assets/000/094/915/medium800/adafruit_io_mxprtl-3877.jpg" alt="Cutting plastic nub" style="max-width: 100%; height: auto; max-height: 250px; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);"></li>
-    <li>A computer running the Arduino IDE.</li>
-    <li>(Optional) multimeter to confirm your supply reads ~5&nbsp;V and to check polarity before connecting.</li>
-  </ul>
-</div>
+      <div class="callout tip">
+        <strong>Pro Tip: Safe Initial Testing</strong><br>
+        It is highly recommended to write your code, program the MatrixPortal via USB, and verify it with the Serial
+        Monitor <em>before</em> you physically connect the board to the LED panel or the heavy 5V power supply. Doing
+        this isolated testing eliminates the risk of accidentally shorting the high-current supply or reversing polarity
+        while you are distracted by software compilation. Once your code uploads successfully, power everything down and
+        proceed to the wiring steps.
+      </div>
 
-<!-- ============ SOFTWARE ============ -->
-<h2 id="software"><span class="n">07</span>Software setup</h2>
-<div class="callout warn">
-  <strong>Warning:</strong> The ESP32-S2/S3 bootloader does not have USB serial support for Windows 7 or 8. (See <a href="https://github.com/espressif/arduino-esp32/issues/5994" class="link">this issue</a>) Please update to version 10 which is supported by Espressif! Alternatively, you can try this <a href="https://github.com/kutukvpavel/Esp32-Win7-VCP-drivers" class="link">community-crafted Windows 7 driver</a>.
-</div>
-<ol>
-  <li>Install the <strong>Arduino IDE 2.x</strong>.</li>
-  <li>Add ESP32 board support: <em>File &rarr; Preferences</em>, add the Espressif board-manager URL (<code>https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</code>).
-    <br><img src="assets/ArduinoIDEPreferences.png" alt="Arduino IDE Preferences" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
-    Then open <em>Boards Manager</em> and install <strong>"esp32" by Espressif Systems</strong>.
-    <br><img src="assets/IDEBoardManages.png" alt="Boards Manager ESP32" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
-  </li>
-  <li>Select the board: Go to <em>Tools &rarr; Board &rarr; ESP32 Arduino</em> and select the <strong>Adafruit MatrixPortal ESP32-S3</strong> (or Adafruit Feather ESP32-S3) entry. (If you don't see the <em>ESP32 Arduino</em> sub-menu, the board support package from step 2 isn't fully installed yet).
-    <br><img src="assets/MatrixBoardSelection.png" alt="MatrixPortal Board Selection" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
-  </li>
-  <li>Install libraries via <em>Library Manager</em>: <strong>Adafruit Protomatter</strong> (pulls in <strong>Adafruit GFX</strong> and <strong>Adafruit BusIO</strong> as dependencies — accept them).
-    <br><img src="assets/AdafruitProtomatter.png" alt="Library Manager Protomatter" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
-  </li>
-  <li>Enable <strong>USB CDC On Boot</strong> under Tools if you want Serial Monitor output over USB.</li>
-  <li><strong>Select the Port:</strong> Go to <em>Tools &rarr; Port</em> and select the COM port labeled with the board name.
-    <br><img src="assets/PortSelection.png" alt="Port Selection" style="max-width: 100%; height: auto; display: block; margin: 8px 0 12px; border-radius: 6px; border: 1px solid var(--border);">
-  </li>
-</ol>
+      <!-- ============ WIRING ============ -->
+      <h2 id="wiring"><span class="n">08</span>Wiring &amp; power</h2>
+      <ol>
+        <li>With <strong>everything powered off</strong>, plug the HUB75 ribbon from the panel's input into the
+          MatrixPortal's HUB75 connector (it's keyed — one orientation).</li>
+        <li>Connect the panel's power leads to the MatrixPortal's <strong>5&nbsp;V and GND screw terminals</strong>,
+          matching red&rarr;+5V and black&rarr;GND. Tighten firmly.</li>
+        <li>Connect your <strong>5&nbsp;V / 4&nbsp;A supply</strong> to power the board+panel (the board can run from
+          the matrix's 5&nbsp;V supply in stand-alone mode). Alternatively power the board over USB and the matrix from
+          the separate 5&nbsp;V supply — if you do that, their grounds are shared through the board.</li>
+        <li>Recheck polarity one more time, then apply power.</li>
+      </ol>
+      <div class="callout warn"><strong>Re-read Section 01 before this step.</strong> Reversed polarity or an
+        over-voltage supply here is the single most common way people destroy the panel and board.</div>
 
-<div class="callout tip">
-  <strong>Pro Tip: Safe Initial Testing</strong><br>
-  It is highly recommended to write your code, program the MatrixPortal via USB, and verify it with the Serial Monitor <em>before</em> you physically connect the board to the LED panel or the heavy 5V power supply. Doing this isolated testing eliminates the risk of accidentally shorting the high-current supply or reversing polarity while you are distracted by software compilation. Once your code uploads successfully, power everything down and proceed to the wiring steps.
-</div>
+      <!-- ============ CODE ============ -->
+      <h2 id="code"><span class="n">09</span>The test sketch — how the pins map to code</h2>
+      <p>The HUB75 signals don't have universal GPIO numbers; Adafruit wired each one to a specific ESP32-S3 pin on this
+        board. The sketch just tells Protomatter which GPIO is which. The <strong>order inside each array
+          matters</strong> — it must match the physical wiring.</p>
 
-<!-- ============ WIRING ============ -->
-<h2 id="wiring"><span class="n">08</span>Wiring &amp; power</h2>
-<ol>
-  <li>With <strong>everything powered off</strong>, plug the HUB75 ribbon from the panel's input into the MatrixPortal's HUB75 connector (it's keyed — one orientation).</li>
-  <li>Connect the panel's power leads to the MatrixPortal's <strong>5&nbsp;V and GND screw terminals</strong>, matching red&rarr;+5V and black&rarr;GND. Tighten firmly.</li>
-  <li>Connect your <strong>5&nbsp;V / 4&nbsp;A supply</strong> to power the board+panel (the board can run from the matrix's 5&nbsp;V supply in stand-alone mode). Alternatively power the board over USB and the matrix from the separate 5&nbsp;V supply — if you do that, their grounds are shared through the board.</li>
-  <li>Recheck polarity one more time, then apply power.</li>
-</ol>
-<div class="callout warn"><strong>Re-read Section 01 before this step.</strong> Reversed polarity or an over-voltage supply here is the single most common way people destroy the panel and board.</div>
+      <pre><code class="language-arduino">#include &lt;Adafruit_Protomatter.h&gt;
 
-<!-- ============ CODE ============ -->
-<h2 id="code"><span class="n">09</span>The test sketch — how the pins map to code</h2>
-<p>The HUB75 signals don't have universal GPIO numbers; Adafruit wired each one to a specific ESP32-S3 pin on this board. The sketch just tells Protomatter which GPIO is which. The <strong>order inside each array matters</strong> — it must match the physical wiring.</p>
-
-<pre><code class="language-arduino">#include &lt;Adafruit_Protomatter.h&gt;
-
+// Matrix properties
 #define PANEL_WIDTH  64
+#define NUM_PANELS   1
+#define TOTAL_WIDTH  (PANEL_WIDTH * NUM_PANELS)
 
-uint8_t rgbPins[]  = {42, 41, 40, 38, 39, 37};
-//                     R1  G1  B1  R2  G2  B2   (top RGB, then bottom RGB)
+// MatrixPortal S3 pin definitions
+#define PIN_R1       42
+#define PIN_G1       41
+#define PIN_B1       40
+#define PIN_R2       38
+#define PIN_G2       39
+#define PIN_B2       37
+#define PIN_A        45
+#define PIN_B        36
+#define PIN_C        48
+#define PIN_D        35
+#define PIN_CLK      2
+#define PIN_LAT      47
+#define PIN_OE       14
 
-uint8_t addrPins[] = {45, 36, 48, 35};
-//                     A   B   C   D   (4 pins = 1/16 scan = 32 rows)
+uint8_t rgbPins[]  = {PIN_R1, PIN_G1, PIN_B1, PIN_R2, PIN_G2, PIN_B2};
+//                     (top RGB, then bottom RGB)
 
-uint8_t clockPin   = 2;    // CLK  — shifts one column of data per pulse
-uint8_t latchPin   = 47;   // LAT  — copies the shift register to the output
-uint8_t oePin      = 14;   // OE   — active-LOW: LOW = LEDs on
+uint8_t addrPins[] = {PIN_A, PIN_B, PIN_C, PIN_D};
+//                     (4 pins = 1/16 scan = 32 rows)
+
+uint8_t clockPin   = PIN_CLK; // CLK  — shifts one column of data per pulse
+uint8_t latchPin   = PIN_LAT; // LAT  — copies the shift register to the output
+uint8_t oePin      = PIN_OE;  // OE   — active-LOW: LOW = LEDs on
 
 Adafruit_Protomatter matrix(
-  PANEL_WIDTH,               // pixels per row
+  TOTAL_WIDTH,               // pixels per row
   4,                         // bit depth per channel — see BCM explanation below
   1, rgbPins,                // 1 chain (no daisy-chaining), then the RGB pin array
   sizeof(addrPins), addrPins,// number of address pins (4 = 1/16 scan), then the array
@@ -654,12 +1615,26 @@ Adafruit_Protomatter matrix(
   false                      // double-buffering off (single frame buffer)
 );
 
+// Brightness scale (0.0 = off, 1.0 = full).
+// Adafruit_Protomatter has no setBrightness() — control brightness by
+// scaling the R/G/B values you pass to color565() instead.
+#define BRIGHTNESS   0.5f
+#define DIM(x)       ((uint8_t)((x) * BRIGHTNESS))
+
 void setup() {
   Serial.begin(115200);
   ProtomatterStatus status = matrix.begin();
-  Serial.printf("Protomatter status: %d\n", status);  // 0 == OK
-
-  matrix.setBrightness(40);   // START LOW (0-255). Low current, low heat.
+  Serial.printf("Protomatter status: %d\n", status);
+  
+  if (status != PROTOMATTER_OK) {
+    // Override default red-line error with visual diagnostic colors
+    // because USB Serial often drops when powering the panel.
+    if (status == 1) matrix.fillScreen(matrix.color565(0, 0, 255));      // Blue: RAM error
+    else if (status == 2) matrix.fillScreen(matrix.color565(255, 255, 0)); // Yellow: Bad pin
+    else if (status == 3) matrix.fillScreen(matrix.color565(255, 0, 255)); // Magenta: Timer conflict
+    matrix.show();
+    while (true); // Halt here
+  }
 
   matrix.fillScreen(0);       // 0 = black (color565 for pure black). Clears
                               // every pixel in the frame buffer to off. Call
@@ -667,17 +1642,17 @@ void setup() {
                               // pixels don't persist.
 
   // Write 'T' in Red
-  matrix.setTextColor(matrix.color565(255, 0, 0));
+  matrix.setTextColor(matrix.color565(DIM(255), DIM(0), DIM(0)));
   matrix.setCursor(2, 12);    // Move the text pen to column 2, row 12 (pixels)
   matrix.print("T");
 
   // Write 'P' in Green
-  matrix.setTextColor(matrix.color565(0, 255, 0));
+  matrix.setTextColor(matrix.color565(DIM(0), DIM(255), DIM(0)));
   matrix.setCursor(10, 12);   // Move cursor to the right for the next letter
   matrix.print("P");
 
   // Write 'S' in Blue
-  matrix.setTextColor(matrix.color565(0, 0, 255));
+  matrix.setTextColor(matrix.color565(DIM(0), DIM(0), DIM(255)));
   matrix.setCursor(18, 12);   // Move cursor to the right again
   matrix.print("S");
 
@@ -689,120 +1664,241 @@ void setup() {
 void loop() { }
 </code></pre>
 
-<div class="callout info"><strong>Where did the height go?</strong> You never write "32". Protomatter derives it from the number of address pins: 4 address pins &rarr; 2<sup>4</sup>&times;2 = 32 rows — exactly the scan-rate math from Section 04. Swap to a 64&times;64 panel later and you'd add the <code>E</code> pin (GPIO 16 or 8 per the board jumper), making 5 address pins and an automatic height of 64.</div>
+      <div class="callout info"><strong>Where did the height go?</strong> You never write "32". Protomatter derives it
+        from the number of address pins: 4 address pins &rarr; 2<sup>4</sup>&times;2 = 32 rows — exactly the scan-rate
+        math from Section 04. Swap to a 64&times;64 panel later and you'd add the <code>E</code> pin (GPIO 16 or 8 per
+        the board jumper), making 5 address pins and an automatic height of 64.</div>
 
-<h3>Bit depth = 4: how BCM turns 1-bit HUB75 pins into smooth color</h3>
-<p>Each HUB75 color pin (<code>R1</code>, <code>G1</code>, <code>B1</code>&hellip;) is just <em>one wire</em> — it is either HIGH or LOW at any instant. So how can a pixel ever look anything other than fully-on or fully-off for each channel? The answer is <strong>Binary Code Modulation (BCM)</strong>, and the <code>4</code> you pass to the constructor controls it.</p>
+      <div class="callout info">
+        <strong>Why the color-coded error check?</strong> The ESP32-S3 uses native USB. When you connect external 5V power to the MatrixPortal, the board's power state changes and often causes Windows to drop the USB COM port. This means you lose the Serial Monitor right when you need it most. Our code catches <code>matrix.begin()</code> failures and displays a solid color on the panel (Blue = RAM error, Yellow = Bad pin, Magenta = Timer conflict) so you can diagnose issues without needing a PC connection!
+      </div>
 
-<div class="card">
-  <h3 style="margin-top:0;">BCM step by step (bit depth = 4 example)</h3>
-  <p>With bit depth 4, the library splits every complete frame refresh into <strong>4 BCM passes</strong>. Each pass lights the pixels for a different duration, weighted by powers of 2:</p>
-  <table>
-    <thead><tr><th>BCM pass</th><th>On-time weight</th><th>Fraction of frame</th><th>Adds brightness level</th></tr></thead>
-    <tbody>
-      <tr><td>Pass 0 (bit 0 — LSB)</td><td>1&times;</td><td>1/15</td><td>+1 step</td></tr>
-      <tr><td>Pass 1 (bit 1)</td><td>2&times;</td><td>2/15</td><td>+2 steps</td></tr>
-      <tr><td>Pass 2 (bit 2)</td><td>4&times;</td><td>4/15</td><td>+4 steps</td></tr>
-      <tr><td>Pass 3 (bit 3 — MSB)</td><td>8&times;</td><td>8/15</td><td>+8 steps</td></tr>
-    </tbody>
-  </table>
-  <p>By choosing which passes to light a pixel in, the library can produce <strong>2<sup>4</sup> = 16 distinct brightness levels</strong> per channel (0 through 15). Your eye averages the rapidly-alternating flashes into a perceived intermediate brightness — exactly the same persistence-of-vision trick as the row multiplexing itself.</p>
-  <p><strong>Bit depth vs. color levels:</strong></p>
-  <ul>
-    <li>Bit depth&nbsp;1 &rarr; 2 levels per channel &rarr; 2&sup3; = 8 colors</li>
-    <li>Bit depth&nbsp;4 &rarr; 16 levels per channel &rarr; 16&sup3; = <strong>4 096 colors</strong></li>
-    <li>Bit depth&nbsp;6 &rarr; 64 levels per channel &rarr; 64&sup3; = <strong>262 144 colors</strong></li>
-  </ul>
-  <p>So <code>4</code> gives you 4&nbsp;096 physical colors, not the 16&nbsp;million that 8-bit-per-channel would give. The library accepts up to 6 (hardware limit on the ESP32-S3 with this panel topology).</p>
-</div>
+      <h3>Bit depth = 4: how BCM turns 1-bit HUB75 pins into smooth color</h3>
+      <p>Each HUB75 color pin (<code>R1</code>, <code>G1</code>, <code>B1</code>&hellip;) is just <em>one wire</em> — it
+        is either HIGH or LOW at any instant. So how can a pixel ever look anything other than fully-on or fully-off for
+        each channel? The answer is <strong>Binary Code Modulation (BCM)</strong>, and the <code>4</code> you pass to
+        the constructor controls it.</p>
 
-<div class="callout info"><strong>Why not just set bit depth = 8 and get 16 million colors?</strong> Because BCM requires the processor to redraw the entire panel once per BCM pass, per frame. At bit depth 8, that is 8 redraws &times; 16 row-pairs &times; 64 clock pulses = thousands of tight GPIO operations per second — more than the ESP32-S3 can sustain without DMA. The practical limit with Protomatter on this board is bit depth <strong>4&ndash;6</strong>. Higher depth = smoother gradients but slower refresh rate and more CPU load.</div>
+      <div class="card">
+        <h3 style="margin-top:0;">BCM step by step (bit depth = 4 example)</h3>
+        <p>With bit depth 4, the library splits every complete frame refresh into <strong>4 BCM passes</strong>. Each
+          pass lights the pixels for a different duration, weighted by powers of 2:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>BCM pass</th>
+              <th>On-time weight</th>
+              <th>Fraction of frame</th>
+              <th>Adds brightness level</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Pass 0 (bit 0 — LSB)</td>
+              <td>1&times;</td>
+              <td>1/15</td>
+              <td>+1 step</td>
+            </tr>
+            <tr>
+              <td>Pass 1 (bit 1)</td>
+              <td>2&times;</td>
+              <td>2/15</td>
+              <td>+2 steps</td>
+            </tr>
+            <tr>
+              <td>Pass 2 (bit 2)</td>
+              <td>4&times;</td>
+              <td>4/15</td>
+              <td>+4 steps</td>
+            </tr>
+            <tr>
+              <td>Pass 3 (bit 3 — MSB)</td>
+              <td>8&times;</td>
+              <td>8/15</td>
+              <td>+8 steps</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>By choosing which passes to light a pixel in, the library can produce <strong>2<sup>4</sup> = 16 distinct
+            brightness levels</strong> per channel (0 through 15). Your eye averages the rapidly-alternating flashes
+          into a perceived intermediate brightness — exactly the same persistence-of-vision trick as the row
+          multiplexing itself.</p>
+        <p><strong>Bit depth vs. color levels:</strong></p>
+        <ul>
+          <li>Bit depth&nbsp;1 &rarr; 2 levels per channel &rarr; 2&sup3; = 8 colors</li>
+          <li>Bit depth&nbsp;4 &rarr; 16 levels per channel &rarr; 16&sup3; = <strong>4 096 colors</strong></li>
+          <li>Bit depth&nbsp;6 &rarr; 64 levels per channel &rarr; 64&sup3; = <strong>262 144 colors</strong></li>
+        </ul>
+        <p>So <code>4</code> gives you 4&nbsp;096 physical colors, not the 16&nbsp;million that 8-bit-per-channel would
+          give. The library accepts up to 6 (hardware limit on the ESP32-S3 with this panel topology).</p>
+      </div>
 
-<h3>How color565 and 256<sup>3</sup> color work in practice</h3>
-<p><code>matrix.color565(R, G, B)</code> takes three values from 0&ndash;255 (the full 8-bit-per-channel range) and packs them into a single 16-bit integer in the <strong>RGB565</strong> format used by the GFX library:</p>
-<ul>
-  <li>Red:   the top 5 bits of the 8-bit R value (256 levels &rarr; 32 levels)</li>
-  <li>Green: the top 6 bits of the 8-bit G value (256 levels &rarr; 64 levels) — gets one extra bit because human eyes are most sensitive to green</li>
-  <li>Blue:  the top 5 bits of the 8-bit B value (256 levels &rarr; 32 levels)</li>
-</ul>
-<p>So the <em>logical</em> color space you work with in code is 65&nbsp;536 colors (5+6+5 bits), but the <em>physical</em> panel can only display as many distinct shades as the BCM bit depth allows. With bit depth 4, the top 4 bits of each channel's 5-or-6-bit value reach the LEDs; the lower bits are discarded. The full theoretical 256&sup3; = <strong>16&nbsp;777&nbsp;216 colors</strong> is what you get only if you had 8-bit BCM and analog LED drivers — raw HUB75 panels approximate it through PWM/BCM, not through true analog current control.</p>
+      <div class="callout info"><strong>Why not just set bit depth = 8 and get 16 million colors?</strong> Because BCM
+        requires the processor to redraw the entire panel once per BCM pass, per frame. At bit depth 8, that is 8
+        redraws &times; 16 row-pairs &times; 64 clock pulses = thousands of tight GPIO operations per second — more than
+        the ESP32-S3 can sustain without DMA. The practical limit with Protomatter on this board is bit depth
+        <strong>4&ndash;6</strong>. Higher depth = smoother gradients but slower refresh rate and more CPU load.</div>
 
-<h3>The pin-to-code cheat sheet</h3>
-<table>
-  <thead><tr><th>HUB75 signal</th><th>GPIO</th><th>Where in the code</th></tr></thead>
-  <tbody>
-    <tr><td>R1 G1 B1 / R2 G2 B2</td><td>42 41 40 / 38 39 37</td><td><code>rgbPins[]</code> (this exact order)</td></tr>
-    <tr><td>A B C D</td><td>45 36 48 35</td><td><code>addrPins[]</code></td></tr>
-    <tr><td>CLK</td><td>2</td><td><code>clockPin</code></td></tr>
-    <tr><td>LAT</td><td>47</td><td><code>latchPin</code></td></tr>
-    <tr><td>OE</td><td>14</td><td><code>oePin</code></td></tr>
-  </tbody>
-</table>
+      <h3>How color565 and 256<sup>3</sup> color work in practice</h3>
+      <p><code>matrix.color565(R, G, B)</code> takes three values from 0&ndash;255 (the full 8-bit-per-channel range)
+        and packs them into a single 16-bit integer in the <strong>RGB565</strong> format used by the GFX library:</p>
+      <ul>
+        <li>Red: the top 5 bits of the 8-bit R value (256 levels &rarr; 32 levels)</li>
+        <li>Green: the top 6 bits of the 8-bit G value (256 levels &rarr; 64 levels) — gets one extra bit because human
+          eyes are most sensitive to green</li>
+        <li>Blue: the top 5 bits of the 8-bit B value (256 levels &rarr; 32 levels)</li>
+      </ul>
+      <p>So the <em>logical</em> color space you work with in code is 65&nbsp;536 colors (5+6+5 bits), but the
+        <em>physical</em> panel can only display as many distinct shades as the BCM bit depth allows. With bit depth 4,
+        the top 4 bits of each channel's 5-or-6-bit value reach the LEDs; the lower bits are discarded. The full
+        theoretical 256&sup3; = <strong>16&nbsp;777&nbsp;216 colors</strong> is what you get only if you had 8-bit BCM
+        and analog LED drivers — raw HUB75 panels approximate it through PWM/BCM, not through true analog current
+        control.</p>
 
-<h3>Uploading to the Board &amp; Factory Backup</h3>
-<p>To upload your code, simply click the <strong>Upload</strong> button (the right-pointing arrow) in the top-left corner of the Arduino IDE. The IDE will compile the sketch and transfer it over USB to the ESP32-S3.</p>
-<div class="callout warn">
-  <strong>What about the default factory program?</strong><br>
-  The MatrixPortal S3 ships from the factory pre-loaded with CircuitPython and a default LED demo script. <strong>Uploading any Arduino sketch will overwrite this CircuitPython environment.</strong> 
-  <ul style="margin-top: 8px;">
-    <li><strong>To backup your scripts:</strong> Before uploading from Arduino, you can plug in the board and simply copy all the files and folders off the <code>CIRCUITPY</code> USB drive to a safe folder on your computer.</li>
-    <li><strong>To completely restore the factory state:</strong> If you ever want to go back to CircuitPython later, you can easily perform a <a href="https://learn.adafruit.com/adafruit-matrixportal-s3/factory-reset" class="link" target="_blank">Factory Reset</a>. Just double-click the physical Reset button on the board so the <code>MATRXS3BOOT</code> drive appears, and drag-and-drop the Adafruit Factory Reset <code>.uf2</code> file onto it. Your board will be exactly as it was when you bought it!</li>
-  </ul>
-</div>
+      <h3>The pin-to-code cheat sheet</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>HUB75 signal</th>
+            <th>GPIO</th>
+            <th>Where in the code</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>R1 G1 B1 / R2 G2 B2</td>
+            <td>42 41 40 / 38 39 37</td>
+            <td><code>rgbPins[]</code> (this exact order)</td>
+          </tr>
+          <tr>
+            <td>A B C D</td>
+            <td>45 36 48 35</td>
+            <td><code>addrPins[]</code></td>
+          </tr>
+          <tr>
+            <td>CLK</td>
+            <td>2</td>
+            <td><code>clockPin</code></td>
+          </tr>
+          <tr>
+            <td>LAT</td>
+            <td>47</td>
+            <td><code>latchPin</code></td>
+          </tr>
+          <tr>
+            <td>OE</td>
+            <td>14</td>
+            <td><code>oePin</code></td>
+          </tr>
+        </tbody>
+      </table>
 
-<!-- ============ TEXT ============ -->
-<h2 id="text"><span class="n">10</span>Writing text on the matrix</h2>
-<p>Protomatter inherits from <strong>Adafruit GFX</strong>, the foundation library for all Adafruit displays. Drawing happens in a frame buffer in RAM; nothing updates on the physical panel until you call <code>matrix.show()</code>. Always call <code>fillScreen()</code> first to clear the previous frame, draw your content, then call <code>show()</code>.</p>
+      <h3>Uploading to the Board &amp; Factory Backup</h3>
+      <p>To upload your code, simply click the <strong>Upload</strong> button (the right-pointing arrow) in the top-left
+        corner of the Arduino IDE. The IDE will compile the sketch and transfer it over USB to the ESP32-S3.</p>
+      <div class="callout warn">
+        <strong>What about the default factory program?</strong><br>
+        The MatrixPortal S3 ships from the factory pre-loaded with CircuitPython and a default LED demo script.
+        <strong>Uploading any Arduino sketch will overwrite this CircuitPython environment.</strong>
+        <ul style="margin-top: 8px;">
+          <li><strong>To backup your scripts:</strong> Before uploading from Arduino, you can plug in the board and
+            simply copy all the files and folders off the <code>CIRCUITPY</code> USB drive to a safe folder on your
+            computer.</li>
+          <li><strong>To completely restore the factory state:</strong> If you ever want to go back to CircuitPython
+            later, you can easily perform a <a href="https://learn.adafruit.com/adafruit-matrixportal-s3/factory-reset"
+              class="link" target="_blank">Factory Reset</a>. Just double-click the physical Reset button on the board
+            so the <code>MATRXS3BOOT</code> drive appears, and drag-and-drop the Adafruit Factory Reset
+            <code>.uf2</code> file onto it. Your board will be exactly as it was when you bought it!</li>
+        </ul>
+      </div>
 
-<div class="card">
-  <h3 style="margin-top:0;">Text function reference</h3>
-  <table>
-    <thead><tr><th>Function call</th><th>What it does</th></tr></thead>
-    <tbody>
-      <tr>
-        <td><code>matrix.fillScreen(0)</code></td>
-        <td>Fills every pixel in the frame buffer with a color. <code>0</code> is black (all channels off). Call this at the start of each frame to erase whatever was drawn before. You can also pass any <code>color565()</code> value to fill with a solid color instead of black.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.setTextColor(c)</code></td>
-        <td>Sets the foreground color for all text drawn after this call. <code>c</code> must be a 16-bit color565 value — use <code>matrix.color565(R, G, B)</code> to convert your RGB values. Text background is transparent by default (only lit pixels are drawn; the dark background shows through). You can also call <code>matrix.setTextColor(fg, bg)</code> with two arguments to make the background opaque — useful on busy backgrounds.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.color565(R, G, B)</code></td>
-        <td>Converts three 0&ndash;255 channel values into the single 16-bit integer the library uses. Examples: <code>color565(255,0,0)</code>&nbsp;= red, <code>color565(0,255,0)</code>&nbsp;= green, <code>color565(255,255,255)</code>&nbsp;= white, <code>color565(0,0,0)</code>&nbsp;= black (same as <code>0</code>). Orange: <code>color565(255,80,0)</code>.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.setTextSize(n)</code></td>
-        <td>Scales the built-in bitmap font. Size&nbsp;1 = 6&times;8&nbsp;px per character (fits ~10 characters across a 64-px-wide panel). Size&nbsp;2 = 12&times;16&nbsp;px (fits ~5 chars). Size&nbsp;3 = 18&times;24&nbsp;px (fits ~3 chars and is taller than the 32-row panel). Almost always use <code>1</code> for a 64&times;32 panel.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.setCursor(x, y)</code></td>
-        <td>Moves the drawing pen to pixel column <code>x</code>, pixel row <code>y</code>. <code>(0, 0)</code> is the top-left corner. <code>y</code> is the <em>top</em> of the glyph, not the baseline. The default font is 8&nbsp;px tall, so valid y values for a 32-row panel are 0&ndash;24 (anything &gt;24 means the text is partially clipped at the bottom).</td>
-      </tr>
-      <tr>
-        <td><code>matrix.setTextWrap(bool)</code></td>
-        <td>When <code>true</code> (default), text that reaches the right edge wraps down to the next line. Set to <code>false</code> when you want text to scroll off the right side — required for horizontal scrolling.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.print("text")</code></td>
-        <td>Draws the string starting at the current cursor position using the current color and size. Accepts any Arduino <code>Print</code>-compatible type: <code>print("hello")</code>, <code>print(42)</code>, <code>print(3.14)</code>. Advances the cursor automatically after each character. Does <strong>not</strong> update the physical panel.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.show()</code></td>
-        <td><strong>The most important call.</strong> Copies the frame buffer to the panel hardware and starts the scanning loop. Nothing is visible on the physical LEDs until this is called. Call it once at the end of each frame — not after every individual drawing call.</td>
-      </tr>
-      <tr>
-        <td><code>matrix.width()</code> / <code>matrix.height()</code></td>
-        <td>Returns the panel dimensions in pixels (64 and 32 respectively). Use these instead of hard-coding numbers so the same code works if you swap panels later.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+      <!-- ============ TEXT ============ -->
+      <h2 id="text"><span class="n">10</span>Writing text on the matrix</h2>
+      <p>Protomatter inherits from <strong>Adafruit GFX</strong>, the foundation library for all Adafruit displays.
+        Drawing happens in a frame buffer in RAM; nothing updates on the physical panel until you call
+        <code>matrix.show()</code>. Always call <code>fillScreen()</code> first to clear the previous frame, draw your
+        content, then call <code>show()</code>.</p>
 
-<div class="callout tip"><strong>Drawing order matters.</strong> Always call <code>fillScreen(0)</code> first, then draw text/graphics, then call <code>show()</code>. Calling <code>show()</code> before drawing gives you a black flash. Calling <code>show()</code> without <code>fillScreen()</code> keeps the old frame as a ghost under the new one.</div>
+      <div class="card">
+        <h3 style="margin-top:0;">Text function reference</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Function call</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>matrix.fillScreen(0)</code></td>
+              <td>Fills every pixel in the frame buffer with a color. <code>0</code> is black (all channels off). Call
+                this at the start of each frame to erase whatever was drawn before. You can also pass any
+                <code>color565()</code> value to fill with a solid color instead of black.</td>
+            </tr>
+            <tr>
+              <td><code>matrix.setTextColor(c)</code></td>
+              <td>Sets the foreground color for all text drawn after this call. <code>c</code> must be a 16-bit color565
+                value — use <code>matrix.color565(R, G, B)</code> to convert your RGB values. Text background is
+                transparent by default (only lit pixels are drawn; the dark background shows through). You can also call
+                <code>matrix.setTextColor(fg, bg)</code> with two arguments to make the background opaque — useful on
+                busy backgrounds.</td>
+            </tr>
+            <tr>
+              <td><code>matrix.color565(R, G, B)</code></td>
+              <td>Converts three 0&ndash;255 channel values into the single 16-bit integer the library uses. Examples:
+                <code>color565(255,0,0)</code>&nbsp;= red, <code>color565(0,255,0)</code>&nbsp;= green,
+                <code>color565(255,255,255)</code>&nbsp;= white, <code>color565(0,0,0)</code>&nbsp;= black (same as
+                <code>0</code>). Orange: <code>color565(255,80,0)</code>.</td>
+            </tr>
+            <tr>
+              <td><code>matrix.setTextSize(n)</code></td>
+              <td>Scales the built-in bitmap font. Size&nbsp;1 = 6&times;8&nbsp;px per character (fits ~10 characters
+                across a 64-px-wide panel). Size&nbsp;2 = 12&times;16&nbsp;px (fits ~5 chars). Size&nbsp;3 =
+                18&times;24&nbsp;px (fits ~3 chars and is taller than the 32-row panel). Almost always use
+                <code>1</code> for a 64&times;32 panel.</td>
+            </tr>
+            <tr>
+              <td><code>matrix.setCursor(x, y)</code></td>
+              <td>Moves the drawing pen to pixel column <code>x</code>, pixel row <code>y</code>. <code>(0, 0)</code> is
+                the top-left corner. <code>y</code> is the <em>top</em> of the glyph, not the baseline. The default font
+                is 8&nbsp;px tall, so valid y values for a 32-row panel are 0&ndash;24 (anything &gt;24 means the text
+                is partially clipped at the bottom).</td>
+            </tr>
+            <tr>
+              <td><code>matrix.setTextWrap(bool)</code></td>
+              <td>When <code>true</code> (default), text that reaches the right edge wraps down to the next line. Set to
+                <code>false</code> when you want text to scroll off the right side — required for horizontal scrolling.
+              </td>
+            </tr>
+            <tr>
+              <td><code>matrix.print("text")</code></td>
+              <td>Draws the string starting at the current cursor position using the current color and size. Accepts any
+                Arduino <code>Print</code>-compatible type: <code>print("hello")</code>, <code>print(42)</code>,
+                <code>print(3.14)</code>. Advances the cursor automatically after each character. Does
+                <strong>not</strong> update the physical panel.</td>
+            </tr>
+            <tr>
+              <td><code>matrix.show()</code></td>
+              <td><strong>The most important call.</strong> Copies the frame buffer to the panel hardware and starts the
+                scanning loop. Nothing is visible on the physical LEDs until this is called. Call it once at the end of
+                each frame — not after every individual drawing call.</td>
+            </tr>
+            <tr>
+              <td><code>matrix.width()</code> / <code>matrix.height()</code></td>
+              <td>Returns the panel dimensions in pixels (64 and 32 respectively). Use these instead of hard-coding
+                numbers so the same code works if you swap panels later.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-<h3>Minimal example with every function explained</h3>
-<pre><code class="language-arduino">// In setup() — static "Hello" in green:
+      <div class="callout tip"><strong>Drawing order matters.</strong> Always call <code>fillScreen(0)</code> first,
+        then draw text/graphics, then call <code>show()</code>. Calling <code>show()</code> before drawing gives you a
+        black flash. Calling <code>show()</code> without <code>fillScreen()</code> keeps the old frame as a ghost under
+        the new one.</div>
+
+      <h3>Minimal example with every function explained</h3>
+      <pre><code class="language-arduino">// In setup() — static "Hello" in green:
 matrix.fillScreen(0);                        // 1. clear the buffer
 matrix.setTextWrap(false);                   // 2. don't wrap (we scroll later)
 matrix.setTextSize(1);                       // 3. default 6x8 px font
@@ -811,8 +1907,8 @@ matrix.setCursor(2, 12);                     // 5. column 2, row 12
 matrix.print("Hello!");                      // 6. draw into buffer
 matrix.show();                               // 7. push buffer to LEDs</code></pre>
 
-<h3>Horizontal scrolling text</h3>
-<pre><code class="language-arduino">int16_t x = matrix.width();       // start just off the right edge (x = 64)
+      <h3>Horizontal scrolling text</h3>
+      <pre><code class="language-arduino">int16_t x = matrix.width();       // start just off the right edge (x = 64)
 const char *msg = "SCROLLING TEXT DEMO";
 
 void loop() {
@@ -826,413 +1922,812 @@ void loop() {
     x = matrix.width();                            // reset to right edge
   delay(30);                                       // ~33 fps scroll speed
 }</code></pre>
-<p><code>strlen(msg) * 6</code> is the total pixel width of the string at size&nbsp;1. When <code>x</code> goes that many pixels past the left edge, the text is fully gone and we reset to the right.</p>
+      <p><code>strlen(msg) * 6</code> is the total pixel width of the string at size&nbsp;1. When <code>x</code> goes
+        that many pixels past the left edge, the text is fully gone and we reset to the right.</p>
 
-<!-- ============ TROUBLESHOOTING ============ -->
-<h2 id="trouble"><span class="n">11</span>Troubleshooting</h2>
-<table>
-  <thead><tr><th>Symptom</th><th>Likely cause &amp; fix</th></tr></thead>
-  <tbody>
-    <tr><td>Nothing lights up</td><td>Check the 5&nbsp;V supply is on and connected to the screw terminals; confirm <code>matrix.begin()</code> printed <code>0</code>; reseat the ribbon cable.</td></tr>
-    <tr><td>Board keeps resetting / dim flicker</td><td>Under-powered — you're likely running the panel off USB or a weak supply. Use a real 5&nbsp;V&nbsp;/&nbsp;4&nbsp;A source and lower brightness.</td></tr>
-    <tr><td>Wrong colors (red shows as blue, etc.)</td><td>Order inside <code>rgbPins[]</code> doesn't match the wiring — recheck R1&nbsp;G1&nbsp;B1&nbsp;R2&nbsp;G2&nbsp;B2.</td></tr>
-    <tr><td>Image split into odd stripes / interlaced</td><td>Scan-rate mismatch. A 1/8-scan panel needs a different address-pin count than 1/16. Check your panel's spec.</td></tr>
-    <tr><td>Garbage on the panel while flashing</td><td>Normal — the panel shows noise until the sketch's <code>begin()</code> runs. It clears once the program starts.</td></tr>
-    <tr><td>Text is off-screen or clipped</td><td>Remember <code>setCursor</code> is the top-left of the glyph and size-1 text is 8&nbsp;px tall; on a 32-tall panel keep <code>y</code> between 0 and 24.</td></tr>
-  </tbody>
-</table>
+      <!-- ============ CHAINING ============ -->
+      <h2 id="chain"><span class="n">11</span>Chaining multiple panels</h2>
+      <p>If you have multiple identical panels, you can extend your display across them. A very common setup is to
+        connect two panels side-by-side (horizontally) to create a wider screen.</p>
+      <p>Inspect the rear of your panel. There are two 10-pin HUB75 connectors. You can "chain" multiple displays by
+        using a ribbon cable to hook the <strong>OUT</strong> of one panel to the <strong>IN</strong> of the next panel.
+      </p>
 
-<h2 id="sources"><span class="n">12</span>Sources &amp; references</h2>
-<p>The pinout, power figures, library details and setup steps in this guide were compiled from these primary sources:</p>
-<div class="card">
-  <ul>
-    <li><a class="link" href="https://learn.adafruit.com/adafruit-matrixportal-s3/pinouts" target="_blank" rel="noopener">Adafruit MatrixPortal S3 — Pinouts</a> — HUB75 GPIO mapping and the 64&times;64 E-line jumper.</li>
-    <li><a class="link" href="https://learn.adafruit.com/adafruit-matrixportal-s3/usb-power" target="_blank" rel="noopener">Adafruit MatrixPortal S3 — USB &amp; Power</a> — powering the board vs. the matrix.</li>
-    <li><a class="link" href="https://learn.adafruit.com/adafruit-matrixportal-s3/overview" target="_blank" rel="noopener">Adafruit MatrixPortal S3 — Overview</a> — board specs (ESP32-S3, flash/RAM, connectors).</li>
-    <li><a class="link" href="https://learn.adafruit.com/32x16-32x32-rgb-led-matrix/powering" target="_blank" rel="noopener">Adafruit — RGB LED Matrix Basics: Powering</a> — 5&nbsp;V / current guidance for panels.</li>
-    <li><a class="link" href="https://github.com/adafruit/Adafruit_Protomatter" target="_blank" rel="noopener">Adafruit_Protomatter library (GitHub)</a> — the library used in the sketch, its API and requirements.</li>
-    <li><a class="link" href="https://cdn-learn.adafruit.com/downloads/pdf/adafruit-protomatter-rgb-matrix-library.pdf" target="_blank" rel="noopener">Adafruit Protomatter RGB Matrix Library guide (PDF)</a> — bit depth, platform support, GFX usage.</li>
-    <li><a class="link" href="https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA" target="_blank" rel="noopener">mrcodetastic — ESP32-HUB75-MatrixPanel-DMA</a> — alternative DMA-based library (scan rates, driver-chip support, BCM/color depth).</li>
-    <li><a class="link" href="https://www.adafruit.com/product/5778" target="_blank" rel="noopener">Adafruit MatrixPortal S3 — product page</a> — panel compatibility (16&times;32 up to 64&times;64).</li>
-  </ul>
-</div>
+      <div class="callout warn">
+        <strong>Powering multiple panels</strong><br>
+        The power supply current requirement increases according to the number of panels, but the voltage requirement is
+        <em>always</em> 5V. A single 64&times;32 pixel panel needs up to 4A. For two panels, you need a <strong>5V
+          8A</strong> supply. An insufficient power supply is a frequent problem and can lead to flickering, resets, and
+        jumbled displays.
+      </div>
 
-<footer>
-  Study guide for the Adafruit MatrixPortal S3 + 64&times;32 HUB75 panel. Pinout and power figures per Adafruit's MatrixPortal&nbsp;S3 learn pages and the Adafruit Protomatter library. Always confirm your specific panel's scan rate and your supply's voltage before powering on.
-</footer>
+      <h3>Code setup for chained panels</h3>
+      <p>When chaining horizontally with the <code>Adafruit_Protomatter</code> library in Arduino, you don't need to
+        specify the number of panels explicitly. Instead, you simply tell the library the <strong>total combined
+          width</strong> of all panels in pixels.</p>
+      <p>For example, if you chain two 64&times;32 panels horizontally, the total width is 128 (64 + 64). The height
+        remains 32.</p>
+      <div class="callout info">
+        <strong>Which panel is X=0?</strong> Protomatter always starts the coordinate system at the panel where the
+        controller is physically connected (the <strong>IN</strong> port). In this project the MatrixPortal S3 is plugged
+        into the <strong>left panel</strong>, so:
+        <ul style="margin-top: 6px;">
+          <li><strong>Left panel (controller here):</strong> X&nbsp;=&nbsp;0 to 63</li>
+          <li><strong>Right panel (chained via ribbon OUT&rarr;IN):</strong> X&nbsp;=&nbsp;64 to 127</li>
+        </ul>
+        If you ever flip the physical arrangement, just swap the cursor X values in code &mdash; no wiring change needed.
+      </div>
 
-</div>
+      <h3>Example: Writing "HELLO" and "WORLD!" across two panels</h3>
+      <p>The MatrixPortal S3 is connected to the <strong>left panel's IN port</strong>. That makes the left panel
+        X&nbsp;=&nbsp;0&ndash;63 and the right (chained) panel X&nbsp;=&nbsp;64&ndash;127.</p>
+      <pre><code class="language-arduino">#include &lt;Adafruit_Protomatter.h&gt;
 
-<script>
-(function(){
-  var COLS=64, ROWS=32, PAIRS=16, CELL=6, HOLD=6;
+// Matrix properties
+#define PANEL_WIDTH  64
+#define NUM_PANELS   2
+#define TOTAL_WIDTH  (PANEL_WIDTH * NUM_PANELS)
 
-  // ── TPS image data ────────────────────────────────────────────────────────
-  var GLYPH = {
-    T: ['####','.##.','.##.','.##.','.##.','.##.','.##.','.##.'],
-    P: ['####','#..#','#..#','####','#...','#...','#...','#...'],
-    S: ['####','#...','#...','####','...#','...#','...#','####']
-  };
-  var LETTER_COLOR = { T:'#ff0000', P:'#00ff00', S:'#0044ff' };
-  var ART = [];
-  for (var r=0; r<8; r++)
-    ART.push('.' + GLYPH.T[r] + '.' + GLYPH.P[r] + '.' + GLYPH.S[r] + '.');
-  function letterAt(cc){
-    if(cc>=1&&cc<=4) return 'T';
-    if(cc>=6&&cc<=9) return 'P';
-    if(cc>=11&&cc<=14) return 'S';
-    return null;
-  }
-  function color(row,col){
-    var cr=Math.floor(row/4), cc=Math.floor(col/4);
-    if(cr>=8||ART[cr][cc]!=='#') return '#000000';
-    var l=letterAt(cc); return l?LETTER_COLOR[l]:'#000000';
-  }
+// MatrixPortal S3 pin definitions
+#define PIN_R1       42
+#define PIN_G1       41
+#define PIN_B1       40
+#define PIN_R2       38
+#define PIN_G2       39
+#define PIN_B2       37
+#define PIN_A        45
+#define PIN_B        36
+#define PIN_C        48
+#define PIN_D        35
+#define PIN_CLK      2
+#define PIN_LAT      47
+#define PIN_OE       14
 
-  // ── Canvases & DOM refs ───────────────────────────────────────────────────
-  var p1=document.getElementById('p1'), c1=p1.getContext('2d');
-  var p2=document.getElementById('p2'), c2=p2.getContext('2d');
-  var sr=document.getElementById('sr'), cs=sr.getContext('2d');
-  var wc=document.getElementById('wc'), cw=wc.getContext('2d');
-  var addrOut=document.getElementById('addrOut'), cap=document.getElementById('cap');
-  var bitEls=[].slice.call(document.querySelectorAll('.bit'));
-  var playBtn=document.getElementById('play');
-  var stepBtn=document.getElementById('step');
-  var stepBackBtn=document.getElementById('stepBack');
-  var resetBtn=document.getElementById('reset');
-  var speedEl=document.getElementById('speed');
+uint8_t rgbPins[]  = {PIN_R1, PIN_G1, PIN_B1, PIN_R2, PIN_G2, PIN_B2};
+uint8_t addrPins[] = {PIN_A, PIN_B, PIN_C, PIN_D};
+uint8_t clockPin   = PIN_CLK;
+uint8_t latchPin   = PIN_LAT;
+uint8_t oePin      = PIN_OE;
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function parseRGB(hex){
-    if(!hex||hex==='#000000') return {r:0,g:0,b:0};
-    var n=parseInt(hex.slice(1),16);
-    return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
-  }
+// Physical layout:
+//   [LEFT PANEL]            [RIGHT PANEL]
+//   MatrixPortal S3 IN ──► OUT ──ribbon──► IN
+//   X: 0 to 63                            X: 64 to 127
+//
+// The controller is plugged into the LEFT panel's IN port.
+// Protomatter starts X=0 at the panel the controller is connected to.
+//
+// Initialize for TWO 64x32 panels chained horizontally
+Adafruit_Protomatter matrix(
+  TOTAL_WIDTH,               // Total bit width
+  4,                         // bit depth per channel (BCM)
+  1, rgbPins,                // 1 chain, RGB pin array
+  sizeof(addrPins), addrPins,// 4 address pins (for 32 rows)
+  clockPin, latchPin, oePin,
+  false                      // single buffering
+);
 
-  // ── Waveform signal definitions ───────────────────────────────────────────
-  var SIGS = [
-    {key:'clk', label:'CLK', color:'#4c9aff', fill:false},
-    {key:'a',   label:'A',   color:'#48c774', fill:false},
-    {key:'b',   label:'B',   color:'#48c774', fill:false},
-    {key:'c',   label:'C',   color:'#48c774', fill:false},
-    {key:'d',   label:'D',   color:'#48c774', fill:false},
-    {key:'lat', label:'LAT', color:'#ff5c5c', fill:true},
-    {key:'oe',  label:'OE',  color:'#ffb638', fill:true},
-    {key:'r1',  label:'R1',  color:'#ff6060', fill:true},
-    {key:'g1',  label:'G1',  color:'#2ecc71', fill:true},
-    {key:'b1',  label:'B1',  color:'#60a8ff', fill:true},
-    {key:'r2',  label:'R2',  color:'#ff6060', fill:true},
-    {key:'g2',  label:'G2',  color:'#2ecc71', fill:true},
-    {key:'b2',  label:'B2',  color:'#60a8ff', fill:true}
-  ];
-  var MAX_VIS=80, MAX_BUF=400;
+// Brightness scale (0.0 = off, 1.0 = full).
+// Adafruit_Protomatter has no setBrightness() — control brightness by
+// scaling the R/G/B values you pass to color565() instead.
+#define BRIGHTNESS   0.5f
+#define DIM(x)       ((uint8_t)((x) * BRIGHTNESS))
 
-  // ── State ─────────────────────────────────────────────────────────────────
-  var addr=0, col=0, phase='shift', hold=0;
-  var playing=true, spd=14, acc=0, last=null;
-  var waveBuffer=[];    // signal snapshot per tick
-  var stateHistory=[];  // for step-back
-
-  // ── Signal snapshot ───────────────────────────────────────────────────────
-  function snapshot(){
-    var shifting = (phase==='shift' && col<COLS);
-    var top = shifting ? parseRGB(color(addr,   col)) : {r:0,g:0,b:0};
-    var bot = shifting ? parseRGB(color(addr+16,col)) : {r:0,g:0,b:0};
-    return {
-      clk: phase==='shift' ? 1:0,
-      a:(addr>>0)&1, b:(addr>>1)&1, c:(addr>>2)&1, d:(addr>>3)&1,
-      lat:(phase==='latch' && hold===1) ? 1 : 0,
-      oe: (phase==='latch' && hold>=0 && hold<=4) ? 1 : 0,
-      r1:shifting&&top.r>127?1:0, g1:shifting&&top.g>127?1:0, b1:shifting&&top.b>127?1:0,
-      r2:shifting&&bot.r>127?1:0, g2:shifting&&bot.g>127?1:0, b2:shifting&&bot.b>127?1:0
-    };
-  }
-  function record(){ waveBuffer.push(snapshot()); if(waveBuffer.length>MAX_BUF) waveBuffer.shift(); }
-
-  // ── Draw pixel canvases ───────────────────────────────────────────────────
-  function px(ctx,r,c,clr){ ctx.fillStyle=clr; ctx.fillRect(c*CELL,r*CELL,CELL-1,CELL-1); }
-  function drawP1(){
-    c1.fillStyle='#000'; c1.fillRect(0,0,p1.width,p1.height);
-    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++) px(c1,r,c,color(r,c));
-    c1.strokeStyle='#4c9aff'; c1.lineWidth=1.5;
-    c1.strokeRect(0,addr*CELL,p1.width,CELL);
-    c1.strokeRect(0,(addr+16)*CELL,p1.width,CELL);
-  }
-  function drawP2(){
-    c2.fillStyle='#000'; c2.fillRect(0,0,p2.width,p2.height);
-    var upTo=phase==='shift'?col:COLS;
-    for(var c=0;c<upTo;c++){ px(c2,addr,c,color(addr,c)); px(c2,addr+16,c,color(addr+16,c)); }
-    if(phase==='shift'&&col<COLS){
-      c2.strokeStyle='#fff'; c2.lineWidth=1;
-      c2.strokeRect(col*CELL,addr*CELL,CELL,CELL);
-      c2.strokeRect(col*CELL,(addr+16)*CELL,CELL,CELL);
-    }
-    c2.strokeStyle='#4c9aff'; c2.lineWidth=1.5;
-    c2.strokeRect(0,addr*CELL,p2.width,CELL);
-    c2.strokeRect(0,(addr+16)*CELL,p2.width,CELL);
-  }
-  function drawSR(){
-    cs.fillStyle='#000'; cs.fillRect(0,0,sr.width,sr.height);
-    var filled=phase==='shift'?col:COLS;
-    for(var c=0;c<COLS;c++){
-      cs.fillStyle=c<filled?color(addr,c):'rgba(255,255,255,0.10)';
-      cs.fillRect(c*CELL,0,CELL-1,14);
-      cs.fillStyle=c<filled?color(addr+16,c):'rgba(255,255,255,0.10)';
-      cs.fillRect(c*CELL,18,CELL-1,14);
-    }
+void setup() {
+  Serial.begin(115200);
+  ProtomatterStatus status = matrix.begin();
+  
+  if (status != PROTOMATTER_OK) {
+    if (status == 1) matrix.fillScreen(matrix.color565(0, 0, 255));      // Blue: RAM
+    else if (status == 2) matrix.fillScreen(matrix.color565(255, 255, 0)); // Yellow: Pin
+    else if (status == 3) matrix.fillScreen(matrix.color565(255, 0, 255)); // Magenta: Timer
+    matrix.show();
+    while (true); // Halt here
   }
 
-  // ── Draw waveform ─────────────────────────────────────────────────────────
-  var LW=38, ROW_H=13, PAD=2;
-  function fitWave(){
-    var w=Math.round(wc.clientWidth||wc.parentNode.clientWidth||800);
-    if(w>0 && wc.width!==w) wc.width=w;
-    if(wc.height!==SIGS.length*ROW_H) wc.height=SIGS.length*ROW_H;
+  matrix.fillScreen(0);
+  matrix.setTextWrap(false);
+  matrix.setTextSize(1);
+
+  // Calculate vertical center for text (font size 1 is 8px tall)
+  int16_t y = (matrix.height() - 8) / 2;
+
+  // Write "HELLO" on the LEFT panel — where the controller is plugged in (X: 0 to 63)
+  matrix.setTextColor(matrix.color565(DIM(0), DIM(255), DIM(0))); // Green
+  matrix.setCursor(17, y);
+  matrix.print("HELLO");
+
+  // Write "WORLD!" on the RIGHT panel — chained via ribbon cable OUT→IN (X: 64 to 127)
+  matrix.setTextColor(matrix.color565(DIM(0), DIM(200), DIM(255))); // Cyan
+  matrix.setCursor(PANEL_WIDTH + 14, y); // offset by PANEL_WIDTH to reach the right panel
+  matrix.print("WORLD!");
+
+  matrix.show();
+}
+
+void loop() { }
+</code></pre>
+
+      <!-- ============ FONTS ============ -->
+      <h2 id="fonts"><span class="n">12</span>Custom Fonts Example</h2>
+      <p>The Adafruit GFX library (which Protomatter uses) includes many built-in fonts. You can switch fonts to achieve different looks, from tiny pixel-art styles to smooth sans-serifs.</p>
+      <div class="callout warn">
+        <strong>Important: Cursor Placement</strong><br>
+        For the default built-in font, <code>setCursor(x, y)</code> sets the <strong>top-left</strong> corner of the text. But for <em>custom fonts</em>, it sets the <strong>baseline</strong> (the bottom-left of most letters). If you set a custom font and use <code>y = 0</code>, the text will draw <em>above</em> the screen and be invisible! You usually need to set <code>y</code> around 10 to 20 for custom fonts on a 32-row panel.
+      </div>
+      <p>Here is an example that cycles through 5 different font styles every 3 seconds:</p>
+      <pre><code class="language-arduino">#include &lt;Adafruit_Protomatter.h&gt;
+#include &lt;Fonts/TomThumb.h&gt;
+#include &lt;Fonts/Org_01.h&gt;
+#include &lt;Fonts/FreeSans9pt7b.h&gt;
+#include &lt;Fonts/FreeMono9pt7b.h&gt;
+
+// Matrix properties
+#define PANEL_WIDTH  64
+#define NUM_PANELS   2
+#define TOTAL_WIDTH  (PANEL_WIDTH * NUM_PANELS)
+
+// MatrixPortal S3 pin definitions
+#define PIN_R1       42
+#define PIN_G1       41
+#define PIN_B1       40
+#define PIN_R2       38
+#define PIN_G2       39
+#define PIN_B2       37
+#define PIN_A        45
+#define PIN_B        36
+#define PIN_C        48
+#define PIN_D        35
+#define PIN_CLK      2
+#define PIN_LAT      47
+#define PIN_OE       14
+
+uint8_t rgbPins[]  = {PIN_R1, PIN_G1, PIN_B1, PIN_R2, PIN_G2, PIN_B2};
+uint8_t addrPins[] = {PIN_A, PIN_B, PIN_C, PIN_D};
+
+Adafruit_Protomatter matrix(
+  TOTAL_WIDTH, 4, 1, rgbPins, sizeof(addrPins), addrPins, 
+  PIN_CLK, PIN_LAT, PIN_OE, false
+);
+
+#define BRIGHTNESS   0.5f
+#define DIM(x)       ((uint8_t)((x) * BRIGHTNESS))
+
+void setup() {
+  Serial.begin(115200);
+  ProtomatterStatus status = matrix.begin();
+  if (status != PROTOMATTER_OK) {
+    if (status == 1) matrix.fillScreen(matrix.color565(0, 0, 255));
+    else if (status == 2) matrix.fillScreen(matrix.color565(255, 255, 0));
+    else if (status == 3) matrix.fillScreen(matrix.color565(255, 0, 255));
+    matrix.show();
+    while (true);
   }
-  function drawWaveform(){
-    fitWave();
-    var W=wc.width, H=wc.height;
-    var SW=W-LW;                         // signal area width
-    var vis=waveBuffer.slice(-MAX_VIS);
-    var N=vis.length;
-    var sw=SW/MAX_VIS;                   // step width (fixed scale)
+  matrix.setTextWrap(false);
+}
 
-    // Background
-    cw.fillStyle='#0a0d12';
-    cw.fillRect(0,0,W,H);
+int fontState = 0;
 
-    // Row separators + labels
-    SIGS.forEach(function(sig,si){
-      var y0=si*ROW_H;
-      // row bg alternating
-      if(si%2===0){ cw.fillStyle='rgba(255,255,255,0.02)'; cw.fillRect(LW,y0,SW,ROW_H); }
-      // label
-      cw.fillStyle=sig.color;
-      cw.font='bold 9px monospace';
-      cw.textAlign='right';
-      cw.textBaseline='middle';
-      cw.fillText(sig.label, LW-4, y0+ROW_H/2);
-    });
+void loop() {
+  matrix.fillScreen(0);
+  matrix.setTextColor(matrix.color565(DIM(255), DIM(255), DIM(0))); // Yellow
+  
+  if (fontState == 0) {
+    // 1. Built-in font (NULL)
+    matrix.setFont(); 
+    matrix.setTextSize(1);
+    matrix.setCursor(2, 2); // Top-left
+    matrix.print("Built-in Font");
+    
+    matrix.setTextColor(matrix.color565(DIM(0), DIM(255), DIM(255)));
+    matrix.setCursor(2, 14);
+    matrix.print("Size 1 (5x7)");
+  } 
+  else if (fontState == 1) {
+    // 2. TomThumb (Tiny font)
+    matrix.setFont(&TomThumb);
+    matrix.setTextSize(1);
+    matrix.setCursor(2, 10); // Baseline
+    matrix.print("TomThumb Font");
+    
+    matrix.setTextColor(matrix.color565(DIM(0), DIM(255), DIM(255)));
+    matrix.setCursor(2, 20);
+    matrix.print("Great for small text");
+  }
+  else if (fontState == 2) {
+    // 3. Org_01 (Clean pixel font)
+    matrix.setFont(&Org_01);
+    matrix.setTextSize(1);
+    matrix.setCursor(2, 10); 
+    matrix.print("Org_01 Font");
+    
+    matrix.setTextColor(matrix.color565(DIM(0), DIM(255), DIM(255)));
+    matrix.setCursor(2, 20);
+    matrix.print("Clean pixel style");
+  }
+  else if (fontState == 3) {
+    // 4. FreeSans9pt7b (Smooth sans-serif)
+    matrix.setFont(&FreeSans9pt7b);
+    matrix.setTextSize(1);
+    matrix.setCursor(2, 20); // Font is taller, needs lower baseline
+    matrix.print("FreeSans9pt");
+  }
+  else if (fontState == 4) {
+    // 5. FreeMono9pt7b (Typewriter style)
+    matrix.setFont(&FreeMono9pt7b);
+    matrix.setTextSize(1);
+    matrix.setCursor(2, 20);
+    matrix.print("FreeMono9pt");
+  }
 
-    // Vertical separator
-    cw.strokeStyle='rgba(255,255,255,0.18)';
-    cw.lineWidth=1;
-    cw.beginPath(); cw.moveTo(LW,0); cw.lineTo(LW,H); cw.stroke();
+  matrix.show();
+  
+  fontState++;
+  if (fontState > 4) fontState = 0;
+  
+  delay(3000); // Wait 3 seconds
+}
+</code></pre>
 
-    if(N<1) return;
+      <!-- ============ TROUBLESHOOTING ============ -->
+      <h2 id="trouble"><span class="n">13</span>Troubleshooting</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Symptom</th>
+            <th>Likely cause &amp; fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nothing lights up</td>
+            <td>Check the 5&nbsp;V supply is on and connected to the screw terminals; confirm
+              <code>matrix.begin()</code> printed <code>0</code>; reseat the ribbon cable.</td>
+          </tr>
+          <tr>
+            <td>Board keeps resetting / dim flicker</td>
+            <td>Under-powered — you're likely running the panel off USB or a weak supply. Use a real
+              5&nbsp;V&nbsp;/&nbsp;4&nbsp;A source and lower brightness.</td>
+          </tr>
+          <tr>
+            <td>Wrong colors (red shows as blue, etc.)</td>
+            <td>Order inside <code>rgbPins[]</code> doesn't match the wiring — recheck
+              R1&nbsp;G1&nbsp;B1&nbsp;R2&nbsp;G2&nbsp;B2.</td>
+          </tr>
+          <tr>
+            <td>Image split into odd stripes / interlaced</td>
+            <td>Scan-rate mismatch. A 1/8-scan panel needs a different address-pin count than 1/16. Check your panel's
+              spec.</td>
+          </tr>
+          <tr>
+            <td>Garbage on the panel while flashing</td>
+            <td>Normal — the panel shows noise until the sketch's <code>begin()</code> runs. It clears once the program
+              starts.</td>
+          </tr>
+          <tr>
+            <td>Text is off-screen or clipped</td>
+            <td>Remember <code>setCursor</code> is the top-left of the glyph and size-1 text is 8&nbsp;px tall; on a
+              32-tall panel keep <code>y</code> between 0 and 24.</td>
+          </tr>
+          <tr>
+            <td>Solid red horizontal line on the panel</td>
+            <td>
+              This is the Protomatter library's built-in error indicator &mdash; it means
+              <code>matrix.begin()</code> failed. Add <code>Serial.begin(115200)</code> to
+              <code>setup()</code> and check the return value:
+              <pre style="margin:8px 0 4px;"><code>ProtomatterStatus s = matrix.begin();
+Serial.printf("Status: %d\n", s);</code></pre>
+              <table style="margin-top:6px; font-size:0.9em;">
+                <thead><tr><th>Code</th><th>Meaning</th><th>Fix</th></tr></thead>
+                <tbody>
+                  <tr><td><code>0</code></td><td>OK &mdash; begin succeeded</td><td>Issue is elsewhere</td></tr>
+                  <tr><td><code>1</code></td><td>Malloc failed (not enough RAM)</td><td>Reduce bit depth from 4 to 3</td></tr>
+                  <tr><td><code>2</code></td><td>Bad pin number</td><td>Verify all pin definitions</td></tr>
+                  <tr><td><code>3</code></td><td>Timer/peripheral conflict</td><td>Check for library conflicts</td></tr>
+                </tbody>
+              </table>
+              <br>Also check your panel's <strong>scan rate</strong>. If the back of your panel says
+              <strong>1/8 scan</strong>, use only 3 address pins (A&nbsp;B&nbsp;C).
+              If it says <strong>1/16 scan</strong>, use 4 address pins (A&nbsp;B&nbsp;C&nbsp;D) as in this guide.
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-    // Draw each signal
-    SIGS.forEach(function(sig,si){
-      var y0=si*ROW_H;
-      var yHi=y0+PAD, yLo=y0+ROW_H-PAD;
+      <h3>Upload issues on Windows (Arduino IDE)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Symptom</th>
+            <th>Likely cause &amp; fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>COM port not visible in <em>Tools &rarr; Port</em></td>
+            <td>Unplug and re-plug the USB cable. If the port still doesn't appear, the USB driver is missing — install
+              the <strong>Silicon Labs CP210x</strong> or <strong>WCH CH340</strong> driver from
+              <a class="link" href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" target="_blank"
+                rel="noopener">silabs.com</a> and restart the IDE.</td>
+          </tr>
+          <tr>
+            <td>"Failed to connect" / upload times out</td>
+            <td>The board isn't entering the bootloader automatically. While the IDE is uploading (dots in the progress
+              bar), <strong>hold the BOOT button and tap Reset once</strong>, then release BOOT. The port may
+              briefly disappear — that is normal.</td>
+          </tr>
+          <tr>
+            <td>Serial upload keeps failing despite correct port</td>
+            <td>Use the UF2 fallback: <strong>double-click the Reset button</strong> rapidly until a drive named
+              <code>MATRXS3BOOT</code> appears in File Explorer, then drag-and-drop your compiled
+              <code>.uf2</code> file onto it. No IDE port needed.</td>
+          </tr>
+          <tr>
+            <td>"Port is busy" / upload blocked</td>
+            <td>The Serial Monitor or another program (e.g., PuTTY) has the COM port open. Close all serial terminals
+              before uploading.</td>
+          </tr>
+          <tr>
+            <td>Board not detected at all on any USB port</td>
+            <td>The cable is charge-only and has no data wires. Swap to a known data-capable USB cable and try a
+              different port on your PC.</td>
+          </tr>
+          <tr>
+            <td>Board not recognised by PC / IDE when panel and power supply are connected</td>
+            <td>
+              <strong>Known behaviour on the MatrixPortal S3.</strong> The ESP32-S3 uses native USB (no separate
+              USB-UART chip). When the 5&nbsp;V supply is connected to the screw terminals at the same time as the
+              USB&nbsp;C cable, the USB enumeration can fail because the board's power state confuses the host PC.
+              <br><br>
+              <strong>Safe programming workflow:</strong>
+              <ol style="margin: 6px 0 0;">
+                <li><strong>Disconnect</strong> the panel ribbon cable and the 5&nbsp;V power leads from the screw terminals.</li>
+                <li>Connect the USB&nbsp;C cable &mdash; the board should now be recognised immediately.</li>
+                <li>Upload your sketch from the Arduino IDE.</li>
+                <li>Disconnect USB, then reconnect the ribbon cable and power supply.</li>
+              </ol>
+              This is the recommended workflow whenever you need to reprogram the board.
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-      // Filled HIGH areas
-      if(sig.fill){
-        cw.save(); cw.globalAlpha=0.15; cw.fillStyle=sig.color;
-        var inFill=false, fx=0;
-        for(var i=0;i<N;i++){
-          var x=LW+i*sw, v=vis[i][sig.key];
-          if(v&&!inFill){ fx=x; inFill=true; }
-          if(!v&&inFill){ cw.fillRect(fx,yHi,x-fx,yLo-yHi); inFill=false; }
+      <h2 id="sources"><span class="n">14</span>Sources &amp; references</h2>
+      <p>The pinout, power figures, library details and setup steps in this guide were compiled from these primary
+        sources:</p>
+      <div class="card">
+        <ul>
+          <li><a class="link" href="https://learn.adafruit.com/adafruit-matrixportal-s3/pinouts" target="_blank"
+              rel="noopener">Adafruit MatrixPortal S3 — Pinouts</a> — HUB75 GPIO mapping and the 64&times;64 E-line
+            jumper.</li>
+          <li><a class="link" href="https://learn.adafruit.com/adafruit-matrixportal-s3/usb-power" target="_blank"
+              rel="noopener">Adafruit MatrixPortal S3 — USB &amp; Power</a> — powering the board vs. the matrix.</li>
+          <li><a class="link" href="https://learn.adafruit.com/adafruit-matrixportal-s3/overview" target="_blank"
+              rel="noopener">Adafruit MatrixPortal S3 — Overview</a> — board specs (ESP32-S3, flash/RAM, connectors).
+          </li>
+          <li><a class="link" href="https://learn.adafruit.com/32x16-32x32-rgb-led-matrix/powering" target="_blank"
+              rel="noopener">Adafruit — RGB LED Matrix Basics: Powering</a> — 5&nbsp;V / current guidance for panels.
+          </li>
+          <li><a class="link" href="https://github.com/adafruit/Adafruit_Protomatter" target="_blank"
+              rel="noopener">Adafruit_Protomatter library (GitHub)</a> — the library used in the sketch, its API and
+            requirements.</li>
+          <li><a class="link"
+              href="https://cdn-learn.adafruit.com/downloads/pdf/adafruit-protomatter-rgb-matrix-library.pdf"
+              target="_blank" rel="noopener">Adafruit Protomatter RGB Matrix Library guide (PDF)</a> — bit depth,
+            platform support, GFX usage.</li>
+          <li><a class="link" href="https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA" target="_blank"
+              rel="noopener">mrcodetastic — ESP32-HUB75-MatrixPanel-DMA</a> — alternative DMA-based library (scan rates,
+            driver-chip support, BCM/color depth).</li>
+          <li><a class="link" href="https://www.adafruit.com/product/5778" target="_blank" rel="noopener">Adafruit
+              MatrixPortal S3 — product page</a> — panel compatibility (16&times;32 up to 64&times;64).</li>
+        </ul>
+      </div>
+
+      <footer>
+        Study guide for the Adafruit MatrixPortal S3 + 64&times;32 HUB75 panel. Pinout and power figures per Adafruit's
+        MatrixPortal&nbsp;S3 learn pages and the Adafruit Protomatter library. Always confirm your specific panel's scan
+        rate and your supply's voltage before powering on.
+      </footer>
+
+    </div>
+
+    <script>
+      (function () {
+        var COLS = 64, ROWS = 32, PAIRS = 16, CELL = 6, HOLD = 6;
+
+        // ── TPS image data ────────────────────────────────────────────────────────
+        var GLYPH = {
+          T: ['####', '.##.', '.##.', '.##.', '.##.', '.##.', '.##.', '.##.'],
+          P: ['####', '#..#', '#..#', '####', '#...', '#...', '#...', '#...'],
+          S: ['####', '#...', '#...', '####', '...#', '...#', '...#', '####']
+        };
+        var LETTER_COLOR = { T: '#ff0000', P: '#00ff00', S: '#0044ff' };
+        var ART = [];
+        for (var r = 0; r < 8; r++)
+          ART.push('.' + GLYPH.T[r] + '.' + GLYPH.P[r] + '.' + GLYPH.S[r] + '.');
+        function letterAt(cc) {
+          if (cc >= 1 && cc <= 4) return 'T';
+          if (cc >= 6 && cc <= 9) return 'P';
+          if (cc >= 11 && cc <= 14) return 'S';
+          return null;
         }
-        if(inFill) cw.fillRect(fx,yHi,LW+N*sw-fx,yLo-yHi);
-        cw.restore();
-      }
+        function color(row, col) {
+          var cr = Math.floor(row / 4), cc = Math.floor(col / 4);
+          if (cr >= 8 || ART[cr][cc] !== '#') return '#000000';
+          var l = letterAt(cc); return l ? LETTER_COLOR[l] : '#000000';
+        }
 
-      // Waveform line
-      cw.strokeStyle=sig.color;
-      cw.lineWidth=1.5;
-      cw.beginPath();
-      var prev=0; // Signals conceptually start low from the left edge
-      cw.moveTo(LW, yLo);
-      for(var i=0;i<N;i++){
-        var x=LW+i*sw;
-        var v=vis[i][sig.key];
-        
-        if (sig.key === 'clk' && v === 1) {
-          // Draw a square clock pulse: low -> high -> low
-          cw.lineTo(x, yLo);
-          cw.lineTo(x + sw*0.2, yLo);
-          cw.lineTo(x + sw*0.2, yHi);
-          cw.lineTo(x + sw*0.8, yHi);
-          cw.lineTo(x + sw*0.8, yLo);
-          cw.lineTo(x + sw, yLo);
-          prev = 0;
-        } else {
-          var y=v?yHi:yLo;
-          if(prev!==v){
-            cw.lineTo(x, prev?yHi:yLo);
-            cw.lineTo(x, y);
+        // ── Canvases & DOM refs ───────────────────────────────────────────────────
+        var p1 = document.getElementById('p1'), c1 = p1.getContext('2d');
+        var p2 = document.getElementById('p2'), c2 = p2.getContext('2d');
+        var sr = document.getElementById('sr'), cs = sr.getContext('2d');
+        var wc = document.getElementById('wc'), cw = wc.getContext('2d');
+        var addrOut = document.getElementById('addrOut'), cap = document.getElementById('cap');
+        var bitEls = [].slice.call(document.querySelectorAll('.bit'));
+        var playBtn = document.getElementById('play');
+        var stepBtn = document.getElementById('step');
+        var stepBackBtn = document.getElementById('stepBack');
+        var resetBtn = document.getElementById('reset');
+        var speedEl = document.getElementById('speed');
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+        function parseRGB(hex) {
+          if (!hex || hex === '#000000') return { r: 0, g: 0, b: 0 };
+          var n = parseInt(hex.slice(1), 16);
+          return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+        }
+
+        // ── Waveform signal definitions ───────────────────────────────────────────
+        var SIGS = [
+          { key: 'clk', label: 'CLK', color: '#4c9aff', fill: false },
+          { key: 'a', label: 'A', color: '#48c774', fill: false },
+          { key: 'b', label: 'B', color: '#48c774', fill: false },
+          { key: 'c', label: 'C', color: '#48c774', fill: false },
+          { key: 'd', label: 'D', color: '#48c774', fill: false },
+          { key: 'lat', label: 'LAT', color: '#ff5c5c', fill: true },
+          { key: 'oe', label: 'OE', color: '#ffb638', fill: true },
+          { key: 'r1', label: 'R1', color: '#ff6060', fill: true },
+          { key: 'g1', label: 'G1', color: '#2ecc71', fill: true },
+          { key: 'b1', label: 'B1', color: '#60a8ff', fill: true },
+          { key: 'r2', label: 'R2', color: '#ff6060', fill: true },
+          { key: 'g2', label: 'G2', color: '#2ecc71', fill: true },
+          { key: 'b2', label: 'B2', color: '#60a8ff', fill: true }
+        ];
+        var MAX_VIS = 80, MAX_BUF = 400;
+
+        // ── State ─────────────────────────────────────────────────────────────────
+        var addr = 0, col = 0, phase = 'shift', hold = 0;
+        var playing = true, spd = 14, acc = 0, last = null;
+        var waveBuffer = [];    // signal snapshot per tick
+        var stateHistory = [];  // for step-back
+
+        // ── Signal snapshot ───────────────────────────────────────────────────────
+        function snapshot() {
+          var shifting = (phase === 'shift' && col < COLS);
+          var top = shifting ? parseRGB(color(addr, col)) : { r: 0, g: 0, b: 0 };
+          var bot = shifting ? parseRGB(color(addr + 16, col)) : { r: 0, g: 0, b: 0 };
+          return {
+            clk: phase === 'shift' ? 1 : 0,
+            a: (addr >> 0) & 1, b: (addr >> 1) & 1, c: (addr >> 2) & 1, d: (addr >> 3) & 1,
+            lat: (phase === 'latch' && hold === 1) ? 1 : 0,
+            oe: (phase === 'latch' && hold >= 0 && hold <= 4) ? 1 : 0,
+            r1: shifting && top.r > 127 ? 1 : 0, g1: shifting && top.g > 127 ? 1 : 0, b1: shifting && top.b > 127 ? 1 : 0,
+            r2: shifting && bot.r > 127 ? 1 : 0, g2: shifting && bot.g > 127 ? 1 : 0, b2: shifting && bot.b > 127 ? 1 : 0
+          };
+        }
+        function record() { waveBuffer.push(snapshot()); if (waveBuffer.length > MAX_BUF) waveBuffer.shift(); }
+
+        // ── Draw pixel canvases ───────────────────────────────────────────────────
+        function px(ctx, r, c, clr) { ctx.fillStyle = clr; ctx.fillRect(c * CELL, r * CELL, CELL - 1, CELL - 1); }
+        function drawP1() {
+          c1.fillStyle = '#000'; c1.fillRect(0, 0, p1.width, p1.height);
+          for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) px(c1, r, c, color(r, c));
+          c1.strokeStyle = '#4c9aff'; c1.lineWidth = 1.5;
+          c1.strokeRect(0, addr * CELL, p1.width, CELL);
+          c1.strokeRect(0, (addr + 16) * CELL, p1.width, CELL);
+        }
+        function drawP2() {
+          c2.fillStyle = '#000'; c2.fillRect(0, 0, p2.width, p2.height);
+          var upTo = phase === 'shift' ? col : COLS;
+          for (var c = 0; c < upTo; c++) { px(c2, addr, c, color(addr, c)); px(c2, addr + 16, c, color(addr + 16, c)); }
+          if (phase === 'shift' && col < COLS) {
+            c2.strokeStyle = '#fff'; c2.lineWidth = 1;
+            c2.strokeRect(col * CELL, addr * CELL, CELL, CELL);
+            c2.strokeRect(col * CELL, (addr + 16) * CELL, CELL, CELL);
           }
-          cw.lineTo(x+sw, y);
-          prev=v;
+          c2.strokeStyle = '#4c9aff'; c2.lineWidth = 1.5;
+          c2.strokeRect(0, addr * CELL, p2.width, CELL);
+          c2.strokeRect(0, (addr + 16) * CELL, p2.width, CELL);
         }
-      }
-      cw.stroke();
-    });
+        function drawSR() {
+          cs.fillStyle = '#000'; cs.fillRect(0, 0, sr.width, sr.height);
+          var filled = phase === 'shift' ? col : COLS;
+          for (var c = 0; c < COLS; c++) {
+            cs.fillStyle = c < filled ? color(addr, c) : 'rgba(255,255,255,0.10)';
+            cs.fillRect(c * CELL, 0, CELL - 1, 14);
+            cs.fillStyle = c < filled ? color(addr + 16, c) : 'rgba(255,255,255,0.10)';
+            cs.fillRect(c * CELL, 18, CELL - 1, 14);
+          }
+        }
 
-    // Playhead at the rightmost sample
-    var px_x=LW+N*sw;
-    cw.save(); cw.globalAlpha=0.35;
-    cw.strokeStyle='#ffffff'; cw.lineWidth=1;
-    cw.setLineDash([3,4]);
-    cw.beginPath(); cw.moveTo(px_x,0); cw.lineTo(px_x,H); cw.stroke();
-    cw.setLineDash([]); cw.restore();
-  }
+        // ── Draw waveform ─────────────────────────────────────────────────────────
+        var LW = 38, ROW_H = 13, PAD = 2;
+        function fitWave() {
+          var w = Math.round(wc.clientWidth || wc.parentNode.clientWidth || 800);
+          if (w > 0 && wc.width !== w) wc.width = w;
+          if (wc.height !== SIGS.length * ROW_H) wc.height = SIGS.length * ROW_H;
+        }
+        function drawWaveform() {
+          fitWave();
+          var W = wc.width, H = wc.height;
+          var SW = W - LW;                         // signal area width
+          var vis = waveBuffer.slice(-MAX_VIS);
+          var N = vis.length;
+          var sw = SW / MAX_VIS;                   // step width (fixed scale)
 
-  // ── State history (step-back) ─────────────────────────────────────────────
-  function pushHistory(){
-    stateHistory.push({addr:addr,col:col,phase:phase,hold:hold,bufLen:waveBuffer.length});
-    if(stateHistory.length>300) stateHistory.shift();
-  }
-  function stepBack(){
-    if(!stateHistory.length) return;
-    var s=stateHistory.pop();
-    addr=s.addr; col=s.col; phase=s.phase; hold=s.hold;
-    waveBuffer=waveBuffer.slice(0,s.bufLen);
-    sigs(); render();
-  }
+          // Background
+          cw.fillStyle = '#0a0d12';
+          cw.fillRect(0, 0, W, H);
 
-  // ── sigs / render ─────────────────────────────────────────────────────────
-  function sigs(){
-    for(var i=0;i<4;i++) bitEls[i].classList.toggle('active',!!((addr>>i)&1));
-    // A is the least-significant bit: value = A + 2B + 4C + 8D
-    addrOut.textContent='A='+((addr>>0)&1)+' B='+((addr>>1)&1)+' C='+((addr>>2)&1)+' D='+((addr>>3)&1)
-      +'  →  row-pair '+addr+' (rows '+addr+' & '+(addr+16)+')';
-    if(phase==='shift')
-      cap.textContent='Shifting column '+col+' / 64 into row-pair '+addr+'. One CLK pulse per column.';
-    else if(hold===0)
-      cap.textContent='LATCH PHASE: CLK stops (all 64 columns are in). OE goes HIGH — display blanked to prevent ghosting.';
-    else if(hold===1)
-      cap.textContent='LATCH PHASE: LAT pulses HIGH — shift register copied to the LED output buffers.';
-    else if(hold>1 && hold<=4)
-      cap.textContent='LATCH PHASE: holding OE HIGH… (in real hardware this on/off timing of OE sets brightness).';
-    else
-      cap.textContent='LATCH PHASE: OE goes LOW (active-low = LEDs on). Row-pair '+addr+' is displayed!';
-    drawWaveform();
-  }
-  function render(){ drawP1(); drawP2(); drawSR(); }
+          // Row separators + labels
+          SIGS.forEach(function (sig, si) {
+            var y0 = si * ROW_H;
+            // row bg alternating
+            if (si % 2 === 0) { cw.fillStyle = 'rgba(255,255,255,0.02)'; cw.fillRect(LW, y0, SW, ROW_H); }
+            // label
+            cw.fillStyle = sig.color;
+            cw.font = 'bold 9px monospace';
+            cw.textAlign = 'right';
+            cw.textBaseline = 'middle';
+            cw.fillText(sig.label, LW - 4, y0 + ROW_H / 2);
+          });
 
-  // ── tick ──────────────────────────────────────────────────────────────────
-  function tick(){
-    pushHistory();
-    if(phase==='shift'){ col++; if(col>=COLS){ phase='latch'; hold=0; } }
-    else { hold++; if(hold>=HOLD){ phase='shift'; col=0; addr=(addr+1)%PAIRS; } }
-    record();
-    sigs(); render();
-  }
+          // Vertical separator
+          cw.strokeStyle = 'rgba(255,255,255,0.18)';
+          cw.lineWidth = 1;
+          cw.beginPath(); cw.moveTo(LW, 0); cw.lineTo(LW, H); cw.stroke();
 
-  // ── Event listeners ───────────────────────────────────────────────────────
-  bitEls.forEach(function(el){
-    el.addEventListener('click',function(){
-      var b=parseInt(el.getAttribute('data-bit'),10);
-      addr^=(1<<b); phase='shift'; col=0; hold=0;
-      playing=false; playBtn.textContent='Play';
-      record(); sigs(); render();
-    });
-  });
-  playBtn.addEventListener('click',function(){ playing=!playing; playBtn.textContent=playing?'Pause':'Play'; });
-  stepBtn.addEventListener('click',function(){ playing=false; playBtn.textContent='Play'; tick(); });
-  stepBackBtn.addEventListener('click',function(){ playing=false; playBtn.textContent='Play'; stepBack(); });
-  resetBtn.addEventListener('click',function(){
-    addr=0;col=0;phase='shift';hold=0;
-    waveBuffer=[]; stateHistory=[];
-    record(); sigs(); render();
-  });
-  speedEl.addEventListener('input',function(e){ spd=parseInt(e.target.value,10); });
+          if (N < 1) return;
 
-  // ── Animation loop ────────────────────────────────────────────────────────
-  function loop(ts){
-    if(last===null) last=ts;
-    var dt=ts-last; last=ts;
-    if(playing){ acc+=dt; var iv=1000/spd; while(acc>=iv){ tick(); acc-=iv; } }
-    requestAnimationFrame(loop);
-  }
-  window.addEventListener('resize', drawWaveform);
-  record(); sigs(); render(); requestAnimationFrame(loop);
-})();
-</script>
+          // Draw each signal
+          SIGS.forEach(function (sig, si) {
+            var y0 = si * ROW_H;
+            var yHi = y0 + PAD, yLo = y0 + ROW_H - PAD;
 
-<script>
-(function(){
-  var root=document.documentElement;
-  var THEME_KEY='hub75_theme', FS_KEY='hub75_fs';
-  var MIN=12, MAX=26, STEP=1;
-  var fs=parseInt(localStorage.getItem(FS_KEY),10); if(isNaN(fs)) fs=16;
-  var theme=localStorage.getItem(THEME_KEY)||'light';
+            // Filled HIGH areas
+            if (sig.fill) {
+              cw.save(); cw.globalAlpha = 0.15; cw.fillStyle = sig.color;
+              var inFill = false, fx = 0;
+              for (var i = 0; i < N; i++) {
+                var x = LW + i * sw, v = vis[i][sig.key];
+                if (v && !inFill) { fx = x; inFill = true; }
+                if (!v && inFill) { cw.fillRect(fx, yHi, x - fx, yLo - yHi); inFill = false; }
+              }
+              if (inFill) cw.fillRect(fx, yHi, LW + N * sw - fx, yLo - yHi);
+              cw.restore();
+            }
 
-  var themeBtn=document.getElementById('themeBtn');
-  var ico=themeBtn.querySelector('.ico'), lbl=themeBtn.querySelector('.lbl');
-  var fsVal=document.getElementById('fsVal');
-  var fsPlus=document.getElementById('fsPlus'), fsMinus=document.getElementById('fsMinus');
+            // Waveform line
+            cw.strokeStyle = sig.color;
+            cw.lineWidth = 1.5;
+            cw.beginPath();
+            var prev = 0; // Signals conceptually start low from the left edge
+            cw.moveTo(LW, yLo);
+            for (var i = 0; i < N; i++) {
+              var x = LW + i * sw;
+              var v = vis[i][sig.key];
 
-  function applyTheme(){
-    root.setAttribute('data-theme', theme);
-    // button shows the mode you'd switch TO
-    if(theme==='dark'){ ico.textContent='☀'; lbl.textContent='Light'; }
-    else { ico.textContent='🌙'; lbl.textContent='Dark'; }
-  }
-  function applyFs(){
-    fs=Math.max(MIN,Math.min(MAX,fs));
-    root.style.setProperty('--fs', fs+'px');
-    fsVal.textContent=fs+'px';
-    fsMinus.disabled=(fs<=MIN); fsPlus.disabled=(fs>=MAX);
-    fsMinus.style.opacity=fs<=MIN?0.4:1; fsPlus.style.opacity=fs>=MAX?0.4:1;
-  }
-  themeBtn.addEventListener('click',function(){
-    theme=(theme==='dark')?'light':'dark';
-    localStorage.setItem(THEME_KEY,theme); applyTheme();
-  });
-  fsPlus.addEventListener('click',function(){ fs+=STEP; localStorage.setItem(FS_KEY,fs); applyFs(); });
-  fsMinus.addEventListener('click',function(){ fs-=STEP; localStorage.setItem(FS_KEY,fs); applyFs(); });
+              if (sig.key === 'clk' && v === 1) {
+                // Draw a square clock pulse: low -> high -> low
+                cw.lineTo(x, yLo);
+                cw.lineTo(x + sw * 0.2, yLo);
+                cw.lineTo(x + sw * 0.2, yHi);
+                cw.lineTo(x + sw * 0.8, yHi);
+                cw.lineTo(x + sw * 0.8, yLo);
+                cw.lineTo(x + sw, yLo);
+                prev = 0;
+              } else {
+                var y = v ? yHi : yLo;
+                if (prev !== v) {
+                  cw.lineTo(x, prev ? yHi : yLo);
+                  cw.lineTo(x, y);
+                }
+                cw.lineTo(x + sw, y);
+                prev = v;
+              }
+            }
+            cw.stroke();
+          });
 
-  applyTheme(); applyFs();
+          // Playhead at the rightmost sample
+          var px_x = LW + N * sw;
+          cw.save(); cw.globalAlpha = 0.35;
+          cw.strokeStyle = '#ffffff'; cw.lineWidth = 1;
+          cw.setLineDash([3, 4]);
+          cw.beginPath(); cw.moveTo(px_x, 0); cw.lineTo(px_x, H); cw.stroke();
+          cw.setLineDash([]); cw.restore();
+        }
 
-  // ── Hamburger menu logic ──────────────────────────────────────────────────
-  var hamburger = document.getElementById('hamburger');
-  var sidebar = document.getElementById('sidebar');
-  var overlay = document.getElementById('sidebarOverlay');
-  function toggleMenu() {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('open');
-  }
-  if(hamburger) {
-    hamburger.addEventListener('click', toggleMenu);
-    overlay.addEventListener('click', toggleMenu);
-    // Close on nav click (mobile)
-    var navLinks = sidebar.querySelectorAll('a');
-    navLinks.forEach(function(l){
-      l.addEventListener('click', function(){
-        if(window.innerWidth <= 859) toggleMenu();
-      });
-    });
-  }
+        // ── State history (step-back) ─────────────────────────────────────────────
+        function pushHistory() {
+          stateHistory.push({ addr: addr, col: col, phase: phase, hold: hold, bufLen: waveBuffer.length });
+          if (stateHistory.length > 300) stateHistory.shift();
+        }
+        function stepBack() {
+          if (!stateHistory.length) return;
+          var s = stateHistory.pop();
+          addr = s.addr; col = s.col; phase = s.phase; hold = s.hold;
+          waveBuffer = waveBuffer.slice(0, s.bufLen);
+          sigs(); render();
+        }
 
-  // ── Active link highlighting (IntersectionObserver) ───────────────────────
-  var sections = document.querySelectorAll('h2[id]');
-  var navItems = sidebar.querySelectorAll('a');
-  var observerOptions = {
-    root: null,
-    rootMargin: '0px 0px -60% 0px',
-    threshold: 0.1
-  };
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if(entry.isIntersecting) {
-        var id = entry.target.getAttribute('id');
-        navItems.forEach(function(a){
-          a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+        // ── sigs / render ─────────────────────────────────────────────────────────
+        function sigs() {
+          for (var i = 0; i < 4; i++) bitEls[i].classList.toggle('active', !!((addr >> i) & 1));
+          // A is the least-significant bit: value = A + 2B + 4C + 8D
+          addrOut.textContent = 'A=' + ((addr >> 0) & 1) + ' B=' + ((addr >> 1) & 1) + ' C=' + ((addr >> 2) & 1) + ' D=' + ((addr >> 3) & 1)
+            + '  →  row-pair ' + addr + ' (rows ' + addr + ' & ' + (addr + 16) + ')';
+          if (phase === 'shift')
+            cap.textContent = 'Shifting column ' + col + ' / 64 into row-pair ' + addr + '. One CLK pulse per column.';
+          else if (hold === 0)
+            cap.textContent = 'LATCH PHASE: CLK stops (all 64 columns are in). OE goes HIGH — display blanked to prevent ghosting.';
+          else if (hold === 1)
+            cap.textContent = 'LATCH PHASE: LAT pulses HIGH — shift register copied to the LED output buffers.';
+          else if (hold > 1 && hold <= 4)
+            cap.textContent = 'LATCH PHASE: holding OE HIGH… (in real hardware this on/off timing of OE sets brightness).';
+          else
+            cap.textContent = 'LATCH PHASE: OE goes LOW (active-low = LEDs on). Row-pair ' + addr + ' is displayed!';
+          drawWaveform();
+        }
+        function render() { drawP1(); drawP2(); drawSR(); }
+
+        // ── tick ──────────────────────────────────────────────────────────────────
+        function tick() {
+          pushHistory();
+          if (phase === 'shift') { col++; if (col >= COLS) { phase = 'latch'; hold = 0; } }
+          else { hold++; if (hold >= HOLD) { phase = 'shift'; col = 0; addr = (addr + 1) % PAIRS; } }
+          record();
+          sigs(); render();
+        }
+
+        // ── Event listeners ───────────────────────────────────────────────────────
+        bitEls.forEach(function (el) {
+          el.addEventListener('click', function () {
+            var b = parseInt(el.getAttribute('data-bit'), 10);
+            addr ^= (1 << b); phase = 'shift'; col = 0; hold = 0;
+            playing = false; playBtn.textContent = 'Play';
+            record(); sigs(); render();
+          });
         });
-      }
-    });
-  }, observerOptions);
-  sections.forEach(function(sec){ observer.observe(sec); });
+        playBtn.addEventListener('click', function () { playing = !playing; playBtn.textContent = playing ? 'Pause' : 'Play'; });
+        stepBtn.addEventListener('click', function () { playing = false; playBtn.textContent = 'Play'; tick(); });
+        stepBackBtn.addEventListener('click', function () { playing = false; playBtn.textContent = 'Play'; stepBack(); });
+        resetBtn.addEventListener('click', function () {
+          addr = 0; col = 0; phase = 'shift'; hold = 0;
+          waveBuffer = []; stateHistory = [];
+          record(); sigs(); render();
+        });
+        speedEl.addEventListener('input', function (e) { spd = parseInt(e.target.value, 10); });
 
-})();
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-arduino.min.js"></script>
+        // ── Animation loop ────────────────────────────────────────────────────────
+        function loop(ts) {
+          if (last === null) last = ts;
+          var dt = ts - last; last = ts;
+          if (playing) { acc += dt; var iv = 1000 / spd; while (acc >= iv) { tick(); acc -= iv; } }
+          requestAnimationFrame(loop);
+        }
+        window.addEventListener('resize', drawWaveform);
+        record(); sigs(); render(); requestAnimationFrame(loop);
+      })();
+    </script>
+
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var THEME_KEY = 'hub75_theme', FS_KEY = 'hub75_fs';
+        var MIN = 12, MAX = 26, STEP = 1;
+        var fs = parseInt(localStorage.getItem(FS_KEY), 10); if (isNaN(fs)) fs = 16;
+        var theme = localStorage.getItem(THEME_KEY) || 'light';
+
+        var themeBtn = document.getElementById('themeBtn');
+        var ico = themeBtn.querySelector('.ico'), lbl = themeBtn.querySelector('.lbl');
+        var fsVal = document.getElementById('fsVal');
+        var fsPlus = document.getElementById('fsPlus'), fsMinus = document.getElementById('fsMinus');
+
+        function applyTheme() {
+          root.setAttribute('data-theme', theme);
+          // button shows the mode you'd switch TO
+          if (theme === 'dark') { ico.textContent = '☀'; lbl.textContent = 'Light'; }
+          else { ico.textContent = '🌙'; lbl.textContent = 'Dark'; }
+        }
+        function applyFs() {
+          fs = Math.max(MIN, Math.min(MAX, fs));
+          root.style.setProperty('--fs', fs + 'px');
+          fsVal.textContent = fs + 'px';
+          fsMinus.disabled = (fs <= MIN); fsPlus.disabled = (fs >= MAX);
+          fsMinus.style.opacity = fs <= MIN ? 0.4 : 1; fsPlus.style.opacity = fs >= MAX ? 0.4 : 1;
+        }
+        themeBtn.addEventListener('click', function () {
+          theme = (theme === 'dark') ? 'light' : 'dark';
+          localStorage.setItem(THEME_KEY, theme); applyTheme();
+        });
+        fsPlus.addEventListener('click', function () { fs += STEP; localStorage.setItem(FS_KEY, fs); applyFs(); });
+        fsMinus.addEventListener('click', function () { fs -= STEP; localStorage.setItem(FS_KEY, fs); applyFs(); });
+
+        applyTheme(); applyFs();
+
+        // ── Hamburger menu logic ──────────────────────────────────────────────────
+        var hamburger = document.getElementById('hamburger');
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        function toggleMenu() {
+          sidebar.classList.toggle('open');
+          overlay.classList.toggle('open');
+        }
+        if (hamburger) {
+          hamburger.addEventListener('click', toggleMenu);
+          overlay.addEventListener('click', toggleMenu);
+          // Close on nav click (mobile)
+          var navLinks = sidebar.querySelectorAll('a');
+          navLinks.forEach(function (l) {
+            l.addEventListener('click', function () {
+              if (window.innerWidth <= 859) toggleMenu();
+            });
+          });
+        }
+
+        // ── Active link highlighting (IntersectionObserver) ───────────────────────
+        var sections = document.querySelectorAll('h2[id]');
+        var navItems = sidebar.querySelectorAll('a');
+        var observerOptions = {
+          root: null,
+          rootMargin: '0px 0px -60% 0px',
+          threshold: 0.1
+        };
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var id = entry.target.getAttribute('id');
+              navItems.forEach(function (a) {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+              });
+            }
+          });
+        }, observerOptions);
+        sections.forEach(function (sec) { observer.observe(sec); });
+
+      })();
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-arduino.min.js"></script>
+    <script>
+      // ── Copy buttons for code blocks ──────────────────────────────────────────
+      document.querySelectorAll('pre').forEach(function (pre) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        btn.setAttribute('aria-label', 'Copy code to clipboard');
+
+        btn.addEventListener('click', function () {
+          var code = pre.querySelector('code');
+          if (!code) return;
+          navigator.clipboard.writeText(code.innerText).then(function () {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(function () {
+              btn.textContent = 'Copy';
+              btn.classList.remove('copied');
+            }, 2000);
+          }).catch(function (err) {
+            console.error('Failed to copy text: ', err);
+          });
+        });
+
+        pre.appendChild(btn);
+      });
+    </script>
 </body>
+
 </html>
